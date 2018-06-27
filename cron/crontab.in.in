@@ -1,0 +1,50 @@
+#
+# -- WARNING -- WARNING -- WARNING -- WARNING -- WARNING -- WARNING -- 
+# ------------------  EDIT THE CORRECT FILE  -------------------------
+# 
+# This file is copied to /etc/cron.d/mailman from
+# @prefix@/cron/crontab.in when the mailman service is started via its
+# init.d script and the file /etc/cron.d/mailman is removed when the
+# service is stopped.  Therefore any edits made directly to
+# /etc/cron.d/mailman will be lost anytime the mailman service
+# restarts.
+#
+# To make changes edit the master copy @prefix@/cron/crontab.in and then
+# restart the service to pick up the changes (/sbin/service mailman restart).
+#
+# The reason this is done this way is because the mailman cron jobs
+# should only be invoked if the mailman service is enabled and not
+# just as a consequence of installing the rpm as was the case
+# previously. The file /etc/cron.d/mailman cannot simply be linked to
+# the master copy in @prefix@/cron because for security reasons cron
+# will not process crontab files that are links or writeable by
+# anybody else but root, thus the file must be copied into /etc/cron.d
+# with the right ownership and permissions.
+#
+# At 8AM every day, mail reminders to admins as to pending requests.
+# They are less likely to ignore these reminders if they're mailed
+# early in the morning, but of course, this is local time... ;)
+0 8 * * * @MAILMAN_USER@ @prefix@/cron/checkdbs
+#
+# At 9AM, send notifications to disabled members that are due to be
+# reminded to re-enable their accounts.
+0 9 * * * @MAILMAN_USER@ @prefix@/cron/disabled
+#
+# Noon, mail digests for lists that do periodic as well as threshhold delivery.
+0 12 * * * @MAILMAN_USER@ @prefix@/cron/senddigests
+#
+# 5 AM on the first of each month, mail out password reminders.
+0 5 1 * * @MAILMAN_USER@ @prefix@/cron/mailpasswds
+#
+# Every 5 mins, try to gate news to mail.  You can comment this one out
+# if you don't want to allow gating, or don't have any going on right now,
+# or want to exclusively use a callback strategy instead of polling.
+0,5,10,15,20,25,30,35,40,45,50,55 * * * * @MAILMAN_USER@ @prefix@/cron/gate_news
+#
+# At 3:27am every night, regenerate the gzip'd archive file.  Only
+# turn this on if the internal archiver is used and
+# GZIP_ARCHIVE_TXT_FILES is false in mm_cfg.py
+27 3 * * * @MAILMAN_USER@ @prefix@/cron/nightly_gzip
+#
+# At 4:30AM daily, cull old entries from the 'bad' and 'shunt' queues.
+30 4 * * * @MAILMAN_USER@ @prefix@/cron/cull_bad_shunt
