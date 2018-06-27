@@ -18,7 +18,7 @@
 
 import re
 import email
-from cStringIO import StringIO
+from io import StringIO
 
 tcre = re.compile(r'the following recipients did not receive this message:',
                   re.IGNORECASE)
@@ -27,7 +27,7 @@ acre = re.compile(r'<(?P<addr>[^>]*)>')
 
 
 def process(msg):
-    if msg.get_content_type() <> 'multipart/mixed':
+    if msg.get_content_type() != 'multipart/mixed':
         return None
     # simple state machine
     #     0 == nothing seen

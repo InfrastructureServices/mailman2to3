@@ -74,9 +74,9 @@ def getDecodedHeaders(msg, cset='utf-8'):
     RFC 2047 decoded, normalized and separated by new lines.
     """
 
-    headers = u''
-    for h, v in msg.items():
-        uvalue = u''
+    headers = ''
+    for h, v in list(msg.items()):
+        uvalue = ''
         try:
             v = decode_header(re.sub('\n\s', ' ', v))
         except HeaderParseError:
@@ -85,16 +85,16 @@ def getDecodedHeaders(msg, cset='utf-8'):
             if not cs:
                 cs = 'us-ascii'
             try:
-                uvalue += unicode(frag, cs, 'replace')
+                uvalue += str(frag, cs, 'replace')
             except LookupError:
                 # The encoding charset is unknown.  At this point, frag
                 # has been QP or base64 decoded into a byte string whose
                 # charset we don't know how to handle.  We will try to
                 # unicode it as iso-8859-1 which may result in a garbled
                 # mess, but we have to do something.
-                uvalue += unicode(frag, 'iso-8859-1', 'replace')
+                uvalue += str(frag, 'iso-8859-1', 'replace')
         uhdr = h.decode('us-ascii', 'replace')
-        headers += u'%s: %s\n' % (h, normalize(mm_cfg.NORMALIZE_FORM, uvalue))
+        headers += '%s: %s\n' % (h, normalize(mm_cfg.NORMALIZE_FORM, uvalue))
     return headers
 
 
@@ -128,7 +128,7 @@ def process(mlist, msg, msgdata):
 publishes a DMARC policy of reject or quarantine, and your message has been
 automatically rejected.  If you think that your messages are being rejected in
 error, contact the mailing list owner at %(listowner)s."""))
-                    raise Errors.RejectMessage, text
+                    raise Errors.RejectMessage(text)
                 elif mlist.dmarc_moderation_action == 4:
                     raise Errors.DiscardMessage
 
@@ -159,7 +159,7 @@ error, contact the mailing list owner at %(listowner)s."""))
     # Now do header_filter_rules
     # TK: Collect headers in sub-parts because attachment filename
     # extension may be a clue to possible virus/spam.
-    headers = u''
+    headers = ''
     # Get the character set of the lists preferred language for headers
     lcset = Utils.GetCharSet(mlist.preferred_language)
     for p in msg.walk():

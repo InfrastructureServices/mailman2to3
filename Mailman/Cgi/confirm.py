@@ -50,20 +50,20 @@ def main():
     if not parts or len(parts) < 1:
         bad_confirmation(doc)
         doc.AddItem(MailmanLogo())
-        print doc.Format()
+        print(doc.Format())
         return
 
     listname = parts[0].lower()
     try:
         mlist = MailList.MailList(listname, lock=0)
-    except Errors.MMListError, e:
+    except Errors.MMListError as e:
         # Avoid cross-site scripting attacks
         safelistname = Utils.websafe(listname)
         bad_confirmation(doc, _('No such list <em>%(safelistname)s</em>'))
         doc.AddItem(MailmanLogo())
         # Send this with a 404 status.
-        print 'Status: 404 Not Found'
-        print doc.Format()
+        print('Status: 404 Not Found')
+        print(doc.Format())
         syslog('error', 'confirm: No such list "%s": %s', listname, e)
         return
 
@@ -80,8 +80,8 @@ def main():
         doc.AddItem(Header(2, _("Error")))
         doc.AddItem(Bold(_('Invalid options to CGI script.')))
         # Send this with a 400 status.
-        print 'Status: 400 Bad Request'
-        print doc.Format()
+        print('Status: 400 Bad Request')
+        print(doc.Format())
         return
 
     if cookie == '':
@@ -94,7 +94,7 @@ def main():
     if len(parts) > 2:
         bad_confirmation(doc)
         doc.AddItem(mlist.GetMailmanFooter())
-        print doc.Format()
+        print(doc.Format())
         return
 
     if not cookie:
@@ -119,7 +119,7 @@ def main():
     if content is None:
         bad_confirmation(doc, badconfirmstr)
         doc.AddItem(mlist.GetMailmanFooter())
-        print doc.Format()
+        print(doc.Format())
         return
 
     try:
@@ -180,7 +180,7 @@ def main():
         bad_confirmation(doc, badconfirmstr)
 
     doc.AddItem(mlist.GetMailmanFooter())
-    print doc.Format()
+    print(doc.Format())
 
 
 
@@ -229,7 +229,7 @@ def ask_for_cookie(mlist, doc, extra=''):
     form.AddItem(table)
     doc.AddItem(form)
     doc.AddItem(mlist.GetMailmanFooter())
-    print doc.Format()
+    print(doc.Format())
 
 
 
@@ -354,7 +354,7 @@ def subscription_confirm(mlist, doc, cookie, cgidata):
                 lang = mlist.preferred_language
             i18n.set_language(lang)
             doc.set_language(lang)
-            if cgidata.has_key('digests'):
+            if 'digests' in cgidata:
                 try:
                     digest = int(cgidata.getfirst('digests'))
                 except ValueError:

@@ -17,7 +17,7 @@
 """Microsoft's `SMTPSVC' nears I kin tell."""
 
 import re
-from cStringIO import StringIO
+from io import StringIO
 from types import ListType
 
 scre = re.compile(r'transcript of session follows', re.IGNORECASE)
@@ -25,7 +25,7 @@ scre = re.compile(r'transcript of session follows', re.IGNORECASE)
 
 
 def process(msg):
-    if msg.get_content_type() <> 'multipart/mixed':
+    if msg.get_content_type() != 'multipart/mixed':
         return None
     # Find the first subpart, which has no MIME type
     try:

@@ -25,7 +25,7 @@ import signal
 import email
 import time
 from types import ListType
-from urllib import quote_plus, unquote_plus
+from urllib.parse import quote_plus, unquote_plus
 
 from Mailman import mm_cfg
 from Mailman import Utils
@@ -76,7 +76,7 @@ def helds_by_skey(mlist, ssort=SSENDER):
             skey = (ptime, sender)
         byskey.setdefault(skey, []).append((ptime, id))
     # Sort groups by time
-    for k, v in byskey.items():
+    for k, v in list(byskey.items()):
         if len(v) > 1:
             v.sort()
             byskey[k] = v
@@ -113,11 +113,11 @@ def main():
     listname = parts[0].lower()
     try:
         mlist = MailList.MailList(listname, lock=0)
-    except Errors.MMListError, e:
+    except Errors.MMListError as e:
         # Avoid cross-site scripting attacks
         safelistname = Utils.websafe(listname)
         # Send this with a 404 status.
-        print 'Status: 404 Not Found'
+        print('Status: 404 Not Found')
         handle_no_list(_('No such list <em>%(safelistname)s</em>'))
         syslog('error', 'admindb: No such list "%s": %s\n', listname, e)
         return
@@ -136,13 +136,13 @@ def main():
         doc.AddItem(Header(2, _("Error")))
         doc.AddItem(Bold(_('Invalid options to CGI script.')))
         # Send this with a 400 status.
-        print 'Status: 400 Bad Request'
-        print doc.Format()
+        print('Status: 400 Bad Request')
+        print(doc.Format())
         return
 
     # CSRF check
     safe_params = ['adminpw', 'admlogin', 'msgid', 'sender', 'details']
-    params = cgidata.keys()
+    params = list(cgidata.keys())
     if set(params) - set(safe_params):
         csrf_checked = csrf_check(mlist, cgidata.getfirst('csrf_token'))
     else:
@@ -156,7 +156,7 @@ def main():
                                   mm_cfg.AuthListModerator,
                                   mm_cfg.AuthSiteAdmin),
                                  cgidata.getfirst('adminpw', '')):
-        if cgidata.has_key('adminpw'):
+        if 'adminpw' in cgidata:
             # This is a re-authorization attempt
             msg = Bold(FontSize('+1', _('Authorization failed.'))).Format()
             remote = os.environ.get('HTTP_FORWARDED_FOR',
@@ -177,10 +177,10 @@ def main():
     # See if this is a logout request
     if len(parts) >= 2 and parts[1] == 'logout':
         if mlist.AuthContextInfo(mm_cfg.AuthSiteAdmin)[0] == 'site':
-            print mlist.ZapCookie(mm_cfg.AuthSiteAdmin)
+            print(mlist.ZapCookie(mm_cfg.AuthSiteAdmin))
         if mlist.AuthContextInfo(mm_cfg.AuthListModerator)[0]:
-            print mlist.ZapCookie(mm_cfg.AuthListModerator)
-        print mlist.ZapCookie(mm_cfg.AuthListAdmin)
+            print(mlist.ZapCookie(mm_cfg.AuthListModerator))
+        print(mlist.ZapCookie(mm_cfg.AuthListAdmin))
         Auth.loginpage(mlist, 'admindb', frontpage=1)
         return
 
@@ -229,7 +229,7 @@ def main():
         signal.signal(signal.SIGTERM, sigterm_handler)
 
         realname = mlist.real_name
-        if not cgidata.keys() or cgidata.has_key('admlogin'):
+        if not list(cgidata.keys()) or 'admlogin' in cgidata:
             # If this is not a form submission (i.e. there are no keys in the
             # form) or it's a login, then we don't need to do much special.
             doc.SetTitle(_('%(realname)s Administrative Database'))
@@ -258,7 +258,7 @@ def main():
                 '<b>%s</b>' % _('Logout')))
             doc.AddItem('</font></div>\n')
             doc.AddItem(mlist.GetMailmanFooter())
-            print doc.Format()
+            print(doc.Format())
             mlist.Save()
             return
 
@@ -272,7 +272,7 @@ def main():
                 2,
                 _('Administrative requests for mailing list:')
                 + ' <em>%s</em>' % mlist.real_name))
-        if details <> 'instructions':
+        if details != 'instructions':
             form.AddItem(Center(SubmitButton('submit', _('Submit All Data'))))
         nomessages = not mlist.GetHeldMessageIds()
         if not (details or sender or msgid or nomessages):
@@ -340,7 +340,7 @@ def main():
             '<b>%s</b>' % _('Logout')))
         doc.AddItem('</font></div>\n')
         doc.AddItem(mlist.GetMailmanFooter())
-        print doc.Format()
+        print(doc.Format())
         # Commit all changes
         mlist.Save()
     finally:
@@ -362,7 +362,7 @@ def handle_no_list(msg=''):
     doc.AddItem(_('You must specify a list name.  Here is the %(link)s'))
     doc.AddItem('<hr>')
     doc.AddItem(MailmanLogo())
-    print doc.Format()
+    print(doc.Format())
 
 
 
@@ -383,7 +383,7 @@ def show_pending_subs(mlist, form):
     for id in pendingsubs:
         addr = mlist.GetRecord(id)[1]
         byaddrs.setdefault(addr, []).append(id)
-    addrs = byaddrs.items()
+    addrs = list(byaddrs.items())
     addrs.sort()
     num = 0
     for addr, ids in addrs:
@@ -440,7 +440,7 @@ def show_pending_unsubs(mlist, form):
     for id in pendingunsubs:
         addr = mlist.GetRecord(id)
         byaddrs.setdefault(addr, []).append(id)
-    addrs = byaddrs.items()
+    addrs = list(byaddrs.items())
     addrs.sort()
     num = 0
     for addr, ids in addrs:
@@ -497,7 +497,7 @@ def show_helds_overview(mlist, form, ssort=SSENDER):
     admindburl = mlist.GetScriptURL('admindb', absolute=1)
     table = Table(border=0)
     form.AddItem(table)
-    skeys = byskey.keys()
+    skeys = list(byskey.keys())
     skeys.sort()
     for skey in skeys:
         sender = skey[1]
@@ -600,8 +600,8 @@ def show_helds_overview(mlist, form, ssort=SSENDER):
             # be close, but won't be exact.  Sigh, good enough.
             try:
                 size = os.path.getsize(os.path.join(mm_cfg.DATA_DIR, filename))
-            except OSError, e:
-                if e.errno <> errno.ENOENT: raise
+            except OSError as e:
+                if e.errno != errno.ENOENT: raise
                 # This message must have gotten lost, i.e. it's already been
                 # handled by the time we got here.
                 mlist.HandleRequest(id, mm_cfg.DISCARD)
@@ -679,7 +679,7 @@ def show_post_requests(mlist, id, info, total, count, form):
     form.AddItem('<hr>')
     # Header shown on each held posting (including count of total)
     msg = _('Posting Held for Approval')
-    if total <> 1:
+    if total != 1:
         msg += _(' (%(count)d of %(total)d)')
     form.AddItem(Center(Header(2, msg)))
     # We need to get the headers and part of the textual body of the message
@@ -688,8 +688,8 @@ def show_post_requests(mlist, id, info, total, count, form):
     # just do raw reads on the file.
     try:
         msg = readMessage(os.path.join(mm_cfg.DATA_DIR, filename))
-    except IOError, e:
-        if e.errno <> errno.ENOENT:
+    except IOError as e:
+        if e.errno != errno.ENOENT:
             raise
         form.AddItem(_('<em>Message with id #%(id)d was lost.'))
         form.AddItem('<p>')
@@ -735,12 +735,12 @@ def show_post_requests(mlist, id, info, total, count, form):
     else:
         mcset = 'us-ascii'
     lcset = Utils.GetCharSet(mlist.preferred_language)
-    if mcset <> lcset:
+    if mcset != lcset:
         try:
-            body = unicode(body, mcset, 'replace').encode(lcset, 'replace')
+            body = str(body, mcset, 'replace').encode(lcset, 'replace')
         except (LookupError, UnicodeError, ValueError):
             pass
-    hdrtxt = NL.join(['%s: %s' % (k, v) for k, v in msg.items()])
+    hdrtxt = NL.join(['%s: %s' % (k, v) for k, v in list(msg.items())])
     hdrtxt = Utils.websafe(hdrtxt)
     # Okay, we've reconstituted the message just fine.  Now for the fun part!
     t = Table(cellspacing=0, cellpadding=0, width='100%')
@@ -804,7 +804,7 @@ def process_form(mlist, doc, cgidata):
     senderactions = {}
     badaddrs = []
     # Sender-centric actions
-    for k in cgidata.keys():
+    for k in list(cgidata.keys()):
         for prefix in ('senderaction-', 'senderpreserve-', 'senderforward-',
                        'senderforwardto-', 'senderfilterp-', 'senderfilter-',
                        'senderclearmodp-', 'senderbanp-'):
@@ -824,7 +824,7 @@ def process_form(mlist, doc, cgidata):
         discardalldefersp = 0
     # Get the summary sequence
     ssort = int(cgidata.getfirst('summary_sort', SSENDER))
-    for sender in senderactions.keys():
+    for sender in list(senderactions.keys()):
         actions = senderactions[sender]
         # Handle what to do about all this sender's held messages
         try:
@@ -899,7 +899,7 @@ def process_form(mlist, doc, cgidata):
     # Now, do message specific actions
     banaddrs = []
     erroraddrs = []
-    for k in cgidata.keys():
+    for k in list(cgidata.keys()):
         formv = cgidata[k]
         if type(formv) == ListType:
             continue
@@ -932,13 +932,13 @@ def process_form(mlist, doc, cgidata):
         preserve = 0
         forward = 0
         forwardaddr = ''
-        if cgidata.has_key(commentkey):
+        if commentkey in cgidata:
             comment = cgidata[commentkey].value
-        if cgidata.has_key(preservekey):
+        if preservekey in cgidata:
             preserve = cgidata[preservekey].value
-        if cgidata.has_key(forwardkey):
+        if forwardkey in cgidata:
             forward = cgidata[forwardkey].value
-        if cgidata.has_key(forwardaddrkey):
+        if forwardaddrkey in cgidata:
             forwardaddr = cgidata[forwardaddrkey].value
         # Should we ban this address?  Do this check before handling the
         # request id because that will evict the record.
@@ -956,9 +956,9 @@ def process_form(mlist, doc, cgidata):
             # That's okay, it just means someone else has already updated the
             # database while we were staring at the page, so just ignore it
             continue
-        except Errors.MMAlreadyAMember, v:
+        except Errors.MMAlreadyAMember as v:
             erroraddrs.append(v)
-        except Errors.MembershipIsBanned, pattern:
+        except Errors.MembershipIsBanned as pattern:
             sender = mlist.GetRecord(request_id)[1]
             banaddrs.append((sender, pattern))
     # save the list and print the results
@@ -966,7 +966,7 @@ def process_form(mlist, doc, cgidata):
     if erroraddrs:
         for addr in erroraddrs:
             addr = Utils.websafe(addr)
-            doc.AddItem(`addr` + _(' is already a member') + '<br>')
+            doc.AddItem(repr(addr) + _(' is already a member') + '<br>')
     if banaddrs:
         for addr, patt in banaddrs:
             addr = Utils.websafe(addr)
@@ -974,5 +974,5 @@ def process_form(mlist, doc, cgidata):
     if badaddrs:
         for addr in badaddrs:
             addr = Utils.websafe(addr)
-            doc.AddItem(`addr` + ': ' + _('Bad/Invalid email address') +
+            doc.AddItem(repr(addr) + ': ' + _('Bad/Invalid email address') +
                         '<br>')

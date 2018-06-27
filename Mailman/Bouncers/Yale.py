@@ -24,7 +24,7 @@ their MTA. :(
 """
 
 import re
-from cStringIO import StringIO
+from io import StringIO
 from email.Utils import getaddresses
 
 scre = re.compile(r'Message not delivered to the following', re.IGNORECASE)
@@ -43,12 +43,12 @@ def process(msg):
         username, domain = whofrom.split('@', 1)
     except (IndexError, ValueError):
         return None
-    if username.lower() <> 'mailer-daemon':
+    if username.lower() != 'mailer-daemon':
         return None
     parts = domain.split('.')
     parts.reverse()
     for part1, part2 in zip(parts, ('edu', 'yale')):
-        if part1 <> part2:
+        if part1 != part2:
             return None
     # Okay, we've established that the bounce came from the mailer-daemon at
     # yale.edu.  Let's look for a name, and then guess the relevant domains.
@@ -73,7 +73,7 @@ def process(msg):
     # Now we have a bunch of names, these are either @yale.edu or
     # @cs.yale.edu.  Add them both.
     addrs = []
-    for name in names.keys():
+    for name in list(names.keys()):
         addrs.append(name + '@yale.edu')
         addrs.append(name + '@cs.yale.edu')
     return addrs

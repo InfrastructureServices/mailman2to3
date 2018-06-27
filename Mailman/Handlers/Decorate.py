@@ -100,21 +100,21 @@ def process(mlist, msg, msgdata):
         # Try to decode qp/base64 also.
         # It is possible header/footer is already unicode if it was
         # interpolated with a unicode.
-        if isinstance(header, unicode):
+        if isinstance(header, str):
             uheader = header
         else:
-            uheader = unicode(header, lcset, 'ignore')
-        if isinstance(footer, unicode):
+            uheader = str(header, lcset, 'ignore')
+        if isinstance(footer, str):
             ufooter = footer
         else:
-            ufooter = unicode(footer, lcset, 'ignore')
+            ufooter = str(footer, lcset, 'ignore')
         try:
-            oldpayload = unicode(msg.get_payload(decode=True), mcset)
-            frontsep = endsep = u''
+            oldpayload = str(msg.get_payload(decode=True), mcset)
+            frontsep = endsep = ''
             if header and not header.endswith('\n'):
-                frontsep = u'\n'
+                frontsep = '\n'
             if footer and not oldpayload.endswith('\n'):
-                endsep = u'\n'
+                endsep = '\n'
             payload = uheader + frontsep + oldpayload + endsep + ufooter
             try:
                 # first, try encode with list charset
@@ -168,7 +168,7 @@ def process(mlist, msg, msgdata):
     inner = Message()
     # Which headers to copy?  Let's just do the Content-* headers
     copied = False
-    for h, v in msg.items():
+    for h, v in list(msg.items()):
         if h.lower().startswith('content-'):
             inner[h] = v
             copied = True
@@ -241,7 +241,7 @@ def decorate(mlist, template, what, extradict=None):
     try:
         text = re.sub(r'(?m)(?<!^--) +(?=\n)', '',
                       re.sub(r'\r\n', r'\n', template % d))
-    except (ValueError, TypeError), e:
+    except (ValueError, TypeError) as e:
         syslog('error', 'Exception while calculating %s:\n%s', what, e)
         text = template
     # Ensure text ends with new-line

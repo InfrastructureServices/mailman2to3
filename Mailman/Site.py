@@ -37,12 +37,12 @@ def _makedir(path):
     try:
         omask = os.umask(0)
         try:
-            os.makedirs(path, 02775)
+            os.makedirs(path, 0o2775)
         finally:
             os.umask(omask)
-    except OSError, e:
+    except OSError as e:
         # Ignore the exceptions if the directory already exists
-        if e.errno <> errno.EEXIST:
+        if e.errno != errno.EEXIST:
             raise
 
 

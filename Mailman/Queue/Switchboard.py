@@ -38,7 +38,7 @@ import os
 import time
 import email
 import errno
-import cPickle
+import pickle
 import marshal
 
 from Mailman import mm_cfg
@@ -48,7 +48,7 @@ from Mailman.Logging.Syslog import syslog
 from Mailman.Utils import sha_new
 
 # 20 bytes of all bits set, maximum sha.digest() value
-shamax = 0xffffffffffffffffffffffffffffffffffffffffL
+shamax = 0xffffffffffffffffffffffffffffffffffffffff
 
 try:
     True, False
@@ -78,16 +78,16 @@ class Switchboard:
         omask = os.umask(0)                       # rwxrws---
         try:
             try:
-                os.mkdir(self.__whichq, 0770)
-            except OSError, e:
-                if e.errno <> errno.EEXIST: raise
+                os.mkdir(self.__whichq, 0o770)
+            except OSError as e:
+                if e.errno != errno.EEXIST: raise
         finally:
             os.umask(omask)
         # Fast track for no slices
         self.__lower = None
         self.__upper = None
         # BAW: test performance and end-cases of this algorithm
-        if numslices <> 1:
+        if numslices != 1:
             self.__lower = ((shamax+1) * slice) / numslices
             self.__upper = (((shamax+1) * (slice+1)) / numslices) - 1
         if recover:
@@ -107,36 +107,36 @@ class Switchboard:
         now = time.time()
         if SAVE_MSGS_AS_PICKLES and not data.get('_plaintext'):
             protocol = 1
-            msgsave = cPickle.dumps(_msg, protocol)
+            msgsave = pickle.dumps(_msg, protocol)
         else:
             protocol = 0
-            msgsave = cPickle.dumps(str(_msg), protocol)
-        hashfood = msgsave + listname + `now`
+            msgsave = pickle.dumps(str(_msg), protocol)
+        hashfood = msgsave + listname + repr(now)
         # Encode the current time into the file name for FIFO sorting in
         # files().  The file name consists of two parts separated by a `+':
         # the received time for this message (i.e. when it first showed up on
         # this system) and the sha hex digest.
         #rcvtime = data.setdefault('received_time', now)
         rcvtime = data.setdefault('received_time', now)
-        filebase = `rcvtime` + '+' + sha_new(hashfood).hexdigest()
+        filebase = repr(rcvtime) + '+' + sha_new(hashfood).hexdigest()
         filename = os.path.join(self.__whichq, filebase + '.pck')
         tmpfile = filename + '.tmp'
         # Always add the metadata schema version number
         data['version'] = mm_cfg.QFILE_SCHEMA_VERSION
         # Filter out volatile entries
-        for k in data.keys():
+        for k in list(data.keys()):
             if k.startswith('_'):
                 del data[k]
         # We have to tell the dequeue() method whether to parse the message
         # object or not.
         data['_parsemsg'] = (protocol == 0)
         # Write to the pickle file the message object and metadata.
-        omask = os.umask(007)                     # -rw-rw----
+        omask = os.umask(0o07)                     # -rw-rw----
         try:
             fp = open(tmpfile, 'w')
             try:
                 fp.write(msgsave)
-                cPickle.dump(data, fp, protocol)
+                pickle.dump(data, fp, protocol)
                 fp.flush()
                 os.fsync(fp.fileno())
             finally:
@@ -157,8 +157,8 @@ class Switchboard:
         # the .pck file in order to try again.
         os.rename(filename, backfile)
         try:
-            msg = cPickle.load(fp)
-            data = cPickle.load(fp)
+            msg = pickle.load(fp)
+            data = pickle.load(fp)
         finally:
             fp.close()
         if data.get('_parsemsg'):
@@ -175,15 +175,15 @@ class Switchboard:
                 omask = os.umask(0)                       # rwxrws---
                 try:
                     try:
-                        os.mkdir(mm_cfg.BADQUEUE_DIR, 0770)
-                    except OSError, e:
-                        if e.errno <> errno.EEXIST: raise
+                        os.mkdir(mm_cfg.BADQUEUE_DIR, 0o770)
+                    except OSError as e:
+                        if e.errno != errno.EEXIST: raise
                 finally:
                     os.umask(omask)
                 os.rename(bakfile, psvfile)
             else:
                 os.unlink(bakfile)
-        except EnvironmentError, e:
+        except EnvironmentError as e:
             syslog('error', 'Failed to unlink/preserve backup file: %s\n%s',
                    bakfile, e)
 
@@ -195,19 +195,19 @@ class Switchboard:
             # By ignoring anything that doesn't end in .pck, we ignore
             # tempfiles and avoid a race condition.
             filebase, ext = os.path.splitext(f)
-            if ext <> extension:
+            if ext != extension:
                 continue
             when, digest = filebase.split('+')
             # Throw out any files which don't match our bitrange.  BAW: test
             # performance and end-cases of this algorithm.  MAS: both
             # comparisons need to be <= to get complete range.
-            if lower is None or (lower <= long(digest, 16) <= upper):
+            if lower is None or (lower <= int(digest, 16) <= upper):
                 key = float(when)
-                while times.has_key(key):
+                while key in times:
                     key += DELTA
                 times[key] = filebase
         # FIFO sort
-        keys = times.keys()
+        keys = list(times.keys())
         keys.sort()
         return [times[k] for k in keys]
 
@@ -224,10 +224,10 @@ class Switchboard:
             fp = open(src, 'rb+')
             try:
                 try:
-                    msg = cPickle.load(fp)
+                    msg = pickle.load(fp)
                     data_pos = fp.tell()
-                    data = cPickle.load(fp)
-                except Exception, s:
+                    data = pickle.load(fp)
+                except Exception as s:
                     # If unpickling throws any exception, just log and
                     # preserve this entry
                     syslog('error', 'Unpickling .bak exception: %s\n'
@@ -240,7 +240,7 @@ class Switchboard:
                         protocol = 0
                     else:
                         protocol = 1
-                    cPickle.dump(data, fp, protocol)
+                    pickle.dump(data, fp, protocol)
                     fp.truncate()
                     fp.flush()
                     os.fsync(fp.fileno())

@@ -72,7 +72,7 @@ def process(mlist, msg, msgdata):
     newrecips = []
     for r in recips:
         # If this recipient is explicitly addressed...
-        if explicit_recips.has_key(r.lower()):
+        if r.lower() in explicit_recips:
             send_duplicate = True
             # If the member wants to receive duplicates, or if the recipient
             # is not a member at all, just flag the X-Mailman-Duplicate: yes
@@ -86,7 +86,7 @@ def process(mlist, msg, msgdata):
             if send_duplicate:
                 msgdata.setdefault('add-dup-header', {})[r] = True
                 newrecips.append(r)
-            elif ccaddrs.has_key(r.lower()):
+            elif r.lower() in ccaddrs:
                 del ccaddrs[r.lower()]
         else:
             # Otherwise, this is the first time they've been in the recips
@@ -98,7 +98,7 @@ def process(mlist, msg, msgdata):
     # RFC 2822 specifies zero or one CC header
     if ccaddrs:
         change_header('Cc',
-        COMMASPACE.join([formataddr(i) for i in ccaddrs.values()]),
+        COMMASPACE.join([formataddr(i) for i in list(ccaddrs.values())]),
         mlist, msg, msgdata)
     else:
         del msg['cc']

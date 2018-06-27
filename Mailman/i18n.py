@@ -97,7 +97,7 @@ def _(s, frame=1):
     charset = _translation.charset()
     if not charset:
         charset = 'us-ascii'
-    for k, v in dict.items():
+    for k, v in list(dict.items()):
         if isinstance(v, UnicodeType):
             dict[k] = v.encode(charset, 'replace')
     try:
@@ -115,7 +115,7 @@ def tolocale(s):
     source = _translation.charset ()
     if not source:
         return s
-    return unicode(s, source, 'replace').encode(_ctype_charset, 'replace')
+    return str(s, source, 'replace').encode(_ctype_charset, 'replace')
 
 if mm_cfg.DISABLE_COMMAND_LOCALE_CSET:
     C_ = _

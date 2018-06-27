@@ -29,12 +29,12 @@ import errno
 import re
 import shutil
 import socket
-import urllib
-import cPickle
+import urllib.request, urllib.parse, urllib.error
+import pickle
 
-from cStringIO import StringIO
+from io import StringIO
 from UserDict import UserDict
-from urlparse import urlparse
+from urllib.parse import urlparse
 from types import *
 
 import email.Iterators
@@ -115,8 +115,8 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         filename = os.path.join(self.fullpath(), 'extend.py')
         dict = {}
         try:
-            execfile(filename, dict)
-        except IOError, e:
+            exec(compile(open(filename).read(), filename, 'exec'), dict)
+        except IOError as e:
             # Ignore missing files, but log other errors
             if e.errno == errno.ENOENT:
                 pass
@@ -146,7 +146,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
                 except AttributeError:
                     pass
             else:
-                raise AttributeError, name
+                raise AttributeError(name)
 
     def __repr__(self):
         if self.Locked():
@@ -260,7 +260,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         url = self.GetScriptURL('options', absolute)
         if obscure:
             user = Utils.ObscureEmail(user)
-        return '%s/%s' % (url, urllib.quote(user.lower()))
+        return '%s/%s' % (url, urllib.parse.quote(user.lower()))
 
     def GetDescription(self, cset=None, errors='xmlcharrefreplace'):
         # Get list's description in charset specified by cset.
@@ -275,7 +275,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
                 ccset = i18n.get_translation().charset() or 'us-ascii'
         else:
             ccset = cset
-        if isinstance(self.description, unicode):
+        if isinstance(self.description, str):
             return self.description.encode(ccset, errors)
         if mcset == ccset:
             return self.description
@@ -517,13 +517,13 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
                langs=None, emailhost=None, urlhost=None):
         assert name == name.lower(), 'List name must be all lower case.'
         if Utils.list_exists(name):
-            raise Errors.MMListAlreadyExistsError, name
+            raise Errors.MMListAlreadyExistsError(name)
         # Problems and potential attacks can occur if the list name in the
         # pipe to the wrapper in an MTA alias or other delivery process
         # contains shell special characters so allow only defined characters
         # (default = '[-+_.=a-z0-9]').
         if len(re.sub(mm_cfg.ACCEPTABLE_LISTNAME_CHARACTERS, '', name)) > 0:
-            raise Errors.BadListNameError, name
+            raise Errors.BadListNameError(name)
         # Validate what will be the list's posting address.  If that's
         # invalid, we don't want to create the mailing list.  The hostname
         # part doesn't really matter, since that better already be valid.
@@ -535,7 +535,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         try:
             Utils.ValidateEmail(postingaddr)
         except Errors.EmailAddressError:
-            raise Errors.BadListNameError, postingaddr
+            raise Errors.BadListNameError(postingaddr)
         # Validate the admin's email address
         Utils.ValidateEmail(admin)
         self._internal_name = name
@@ -567,12 +567,12 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         try:
             fp = open(fname_tmp, 'w')
             # Use a binary format... it's more efficient.
-            cPickle.dump(dict, fp, 1)
+            pickle.dump(dict, fp, 1)
             fp.flush()
             if mm_cfg.SYNC_AFTER_WRITE:
                 os.fsync(fp.fileno())
             fp.close()
-        except IOError, e:
+        except IOError as e:
             syslog('error',
                    'Failed config.pck write, retaining old state.\n%s', e)
             if fp is not None:
@@ -583,13 +583,13 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         try:
             # might not exist yet
             os.unlink(fname_last)
-        except OSError, e:
-            if e.errno <> errno.ENOENT: raise
+        except OSError as e:
+            if e.errno != errno.ENOENT: raise
         try:
             # might not exist yet
             os.link(fname, fname_last)
-        except OSError, e:
-            if e.errno <> errno.ENOENT: raise
+        except OSError as e:
+            if e.errno != errno.ENOENT: raise
         os.rename(fname_tmp, fname)
         # Reset the timestamp
         self.__timestamp = os.path.getmtime(fname)
@@ -602,13 +602,13 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         self.__lock.refresh()
         # copy all public attributes to serializable dictionary
         dict = {}
-        for key, value in self.__dict__.items():
+        for key, value in list(self.__dict__.items()):
             if key[0] == '_' or type(value) is MethodType:
                 continue
             dict[key] = value
         # Make config.pck unreadable by `other', as it contains all the
         # list members' passwords (in clear text).
-        omask = os.umask(007)
+        omask = os.umask(0o07)
         try:
             self.__save(dict)
         finally:
@@ -630,7 +630,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         if dbfile.endswith('.db') or dbfile.endswith('.db.last'):
             loadfunc = marshal.load
         elif dbfile.endswith('.pck') or dbfile.endswith('.pck.last'):
-            loadfunc = cPickle.load
+            loadfunc = pickle.load
         else:
             assert 0, 'Bad database file name'
         try:
@@ -653,18 +653,18 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
                 # File is not newer
                 return None, None
             fp = open(dbfile)
-        except EnvironmentError, e:
-            if e.errno <> errno.ENOENT: raise
+        except EnvironmentError as e:
+            if e.errno != errno.ENOENT: raise
             # The file doesn't exist yet
             return None, e
         now = int(time.time())
         try:
             try:
                 dict = loadfunc(fp)
-                if type(dict) <> DictType:
+                if type(dict) != DictType:
                     return None, 'Load() expected to return a dictionary'
             except (EOFError, ValueError, TypeError, MemoryError,
-                    cPickle.PicklingError, cPickle.UnpicklingError), e:
+                    pickle.PicklingError, pickle.UnpicklingError) as e:
                 return None, e
         finally:
             fp.close()
@@ -704,7 +704,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
             # Nothing worked, so we have to give up
             syslog('error', 'All %s fallbacks were corrupt, giving up',
                    self.internal_name())
-            raise Errors.MMCorruptListDatabaseError, e
+            raise Errors.MMCorruptListDatabaseError(e)
         # Now, if we didn't end up using the primary database file, we want to
         # copy the fallback into the primary so that the logic in Save() will
         # still work.  For giggles, we'll copy it to a safety backup.  Note we
@@ -735,12 +735,12 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
             # calls if those files exist with different ownership.
             try:
                 os.rename(pfile, pfile + '.corrupt')
-            except OSError, e:
-                if e.errno <> errno.ENOENT: raise
+            except OSError as e:
+                if e.errno != errno.ENOENT: raise
             try:
                 os.remove(pfile + '.safety')
-            except OSError, e:
-                if e.errno <> errno.ENOENT: raise
+            except OSError as e:
+                if e.errno != errno.ENOENT: raise
             shutil.copy(file, pfile)
             shutil.copy(file, pfile + '.safety')
         elif file == dlast:
@@ -749,12 +749,12 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
             # calls if those files exist with different ownership.
             try:
                 os.rename(dfile, dfile + '.corrupt')
-            except OSError, e:
-                if e.errno <> errno.ENOENT: raise
+            except OSError as e:
+                if e.errno != errno.ENOENT: raise
             try:
                 os.remove(dfile + '.safety')
-            except OSError, e:
-                if e.errno <> errno.ENOENT: raise
+            except OSError as e:
+                if e.errno != errno.ENOENT: raise
             shutil.copy(file, dfile)
             shutil.copy(file, dfile + '.safety')
 
@@ -777,7 +777,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         if not waslocked:
             self.Lock()
         try:
-            from versions import Update
+            from .versions import Update
             Update(self, stored_state)
             self.data_version = mm_cfg.DATA_FILE_VERSION
             self.Save()
@@ -794,7 +794,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
             self.web_page_url = (
                 mm_cfg.DEFAULT_URL or
                 mm_cfg.DEFAULT_URL_PATTERN % mm_cfg.DEFAULT_URL_HOST)
-        if self.web_page_url and self.web_page_url[-1] <> '/':
+        if self.web_page_url and self.web_page_url[-1] != '/':
             self.web_page_url = self.web_page_url + '/'
         # Legacy reply_to_address could be an illegal value.  We now verify
         # upon setting and don't check it at the point of use.
@@ -844,7 +844,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         if pattern:
             syslog('vette', '%s banned invitation: %s (matched: %s)',
                    self.real_name, invitee, pattern)
-            raise Errors.MembershipIsBanned, pattern
+            raise Errors.MembershipIsBanned(pattern)
         # Hack alert!  Squirrel away a flag that only invitations have, so
         # that we can do something slightly different when an invitation
         # subscription is confirmed.  In those cases, we don't need further
@@ -916,7 +916,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         # Validate the e-mail address to some degree.
         Utils.ValidateEmail(email)
         if self.isMember(email):
-            raise Errors.MMAlreadyAMember, email
+            raise Errors.MMAlreadyAMember(email)
         if email.lower() == self.GetListEmail().lower():
             # Trying to subscribe the list to itself!
             raise Errors.MMBadEmailError
@@ -930,20 +930,20 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
                 whence = ''
             syslog('vette', '%s banned subscription: %s%s (matched: %s)',
                    realname, email, whence, pattern)
-            raise Errors.MembershipIsBanned, pattern
+            raise Errors.MembershipIsBanned(pattern)
         # See if this is from a spamhaus listed IP.
         if remote and mm_cfg.BLOCK_SPAMHAUS_LISTED_IP_SUBSCRIBE:
             if Utils.banned_ip(remote):
                 whence = ' from %s' % remote
                 syslog('vette', '%s banned subscription: %s%s (Spamhaus IP)',
                        realname, email, whence)
-                raise Errors.MembershipIsBanned, 'Spamhaus IP'
+                raise Errors.MembershipIsBanned('Spamhaus IP')
         # See if this is from a spamhaus listed domain.
         if email and mm_cfg.BLOCK_SPAMHAUS_LISTED_DBL_SUBSCRIBE:
             if Utils.banned_domain(email):
                 syslog('vette', '%s banned subscription: %s (Spamhaus DBL)',
                        realname, email)
-                raise Errors.MembershipIsBanned, 'Spamhaus DBL'
+                raise Errors.MembershipIsBanned('Spamhaus DBL')
         # Sanity check the digest flag
         if digest and not self.digestable:
             raise Errors.MMCantDigestError
@@ -1014,8 +1014,8 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
             # requests database.  BAW: this should probably take a userdesc
             # just like above.
             self.HoldSubscription(email, name, password, digest, lang)
-            raise Errors.MMNeedApproval, _(
-                'subscriptions to %(realname)s require moderator approval')
+            raise Errors.MMNeedApproval(_(
+                'subscriptions to %(realname)s require moderator approval'))
 
     def ApprovedAddMember(self, userdesc, ack=None, admin_notif=None, text='',
                           whence=''):
@@ -1054,7 +1054,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         # Let's be extra cautious
         Utils.ValidateEmail(email)
         if self.isMember(email):
-            raise Errors.MMAlreadyAMember, email
+            raise Errors.MMAlreadyAMember(email)
         # Check for banned address here too for admin mass subscribes
         # and confirmations.
         pattern = self.GetBannedPattern(email)
@@ -1065,7 +1065,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
                 source = ''
             syslog('vette', '%s banned subscription: %s%s (matched: %s)',
                    self.real_name, email, source, pattern)
-            raise Errors.MembershipIsBanned, pattern
+            raise Errors.MembershipIsBanned(pattern)
         # Do the actual addition
         self.addNewMember(email, realname=name, digest=digest,
                           password=password, language=lang)
@@ -1116,8 +1116,8 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
             self.ApprovedDeleteMember(name, whence, admin_notif, userack)
         else:
             self.HoldUnsubscription(email)
-            raise Errors.MMNeedApproval, _(
-                'unsubscriptions require moderator approval')
+            raise Errors.MMNeedApproval(_(
+                'unsubscriptions require moderator approval'))
 
     def ApprovedDeleteMember(self, name, whence=None,
                              admin_notif=None, userack=None):
@@ -1162,7 +1162,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
             if listname == self.internal_name():
                 continue
             mlist = MailList(listname, lock=0)
-            if mlist.host_name <> self.host_name:
+            if mlist.host_name != self.host_name:
                 continue
             if not mlist.isMember(addr):
                 continue
@@ -1198,7 +1198,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
             syslog('vette',
                    '%s banned address change: %s -> %s (matched: %s)',
                    realname, oldaddr, newaddr, pattern)
-            raise Errors.MembershipIsBanned, pattern
+            raise Errors.MembershipIsBanned(pattern)
         # Pend the subscription change
         cookie = self.pend_new(Pending.CHANGE_OF_ADDRESS,
                                oldaddr, newaddr, globally)
@@ -1241,7 +1241,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
             syslog('vette',
                    '%s banned address change: %s -> %s (matched: %s)',
                    self.real_name, oldaddr, newaddr, pattern)
-            raise Errors.MembershipIsBanned, pattern
+            raise Errors.MembershipIsBanned(pattern)
         # It's possible they were a member of this list, but choose to change
         # their membership globally.  In that case, we simply remove the old
         # address.  This gets tricky with case changes.  We can't just remove
@@ -1253,7 +1253,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         cpoldaddr = self.getMemberCPAddress(oldaddr)
         if self.isMember(newaddr) and (self.getMemberCPAddress(newaddr) ==
                 newaddr):
-            if cpoldaddr <> newaddr:
+            if cpoldaddr != newaddr:
                 self.removeMember(oldaddr)
         else:
             self.changeMemberAddress(oldaddr, newaddr)
@@ -1267,7 +1267,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
             if listname == self.internal_name():
                 continue
             mlist = MailList(listname, lock=0)
-            if mlist.host_name <> self.host_name:
+            if mlist.host_name != self.host_name:
                 continue
             if not mlist.isMember(oldaddr):
                 continue
@@ -1280,7 +1280,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
                 cpoldaddr = mlist.getMemberCPAddress(oldaddr)
                 if mlist.isMember(newaddr) and (
                         mlist.getMemberCPAddress(newaddr) == newaddr):
-                    if cpoldaddr <> newaddr:
+                    if cpoldaddr != newaddr:
                         mlist.removeMember(oldaddr)
                 else:
                     mlist.changeMemberAddress(oldaddr, newaddr)
@@ -1325,12 +1325,12 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         global _
         rec = self.pend_confirm(cookie)
         if rec is None:
-            raise Errors.MMBadConfirmation, 'No cookie record for %s' % cookie
+            raise Errors.MMBadConfirmation('No cookie record for %s' % cookie)
         try:
             op = rec[0]
             data = rec[1:]
         except ValueError:
-            raise Errors.MMBadConfirmation, 'op-less data %s' % (rec,)
+            raise Errors.MMBadConfirmation('op-less data %s' % (rec,))
         if op == Pending.SUBSCRIPTION:
             _ = D_
             whence = _('via email confirmation')
@@ -1349,7 +1349,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
                 digest = userdesc.digest
                 lang = userdesc.language
             except ValueError:
-                raise Errors.MMBadConfirmation, 'bad subscr data %s' % (data,)
+                raise Errors.MMBadConfirmation('bad subscr data %s' % (data,))
             _ = i18n._
             # Hack alert!  Was this a confirmation of an invitation?
             invitation = getattr(userdesc, 'invitation', False)
@@ -1357,7 +1357,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
             # approval) because the policy could have been changed in the
             # middle of the confirmation dance.
             if invitation:
-                if invitation <> self.internal_name():
+                if invitation != self.internal_name():
                     # Not cool.  The invitee was trying to subscribe to a
                     # different list than they were invited to.  Alert both
                     # list administrators.
@@ -1367,8 +1367,8 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
                     not self.HasAutoApprovedSender(addr):
                 self.HoldSubscription(addr, fullname, password, digest, lang)
                 name = self.real_name
-                raise Errors.MMNeedApproval, _(
-                    'subscriptions to %(name)s require administrator approval')
+                raise Errors.MMNeedApproval(_(
+                    'subscriptions to %(name)s require administrator approval'))
             self.ApprovedAddMember(userdesc, whence=whence)
             return op, addr, password, digest, lang
         elif op == Pending.UNSUBSCRIPTION:
@@ -1429,7 +1429,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
                 # do not allow the site password here.
                 if self.Authenticate([mm_cfg.AuthListAdmin,
                                       mm_cfg.AuthListModerator],
-                                     approved) <> mm_cfg.UnAuthorized:
+                                     approved) != mm_cfg.UnAuthorized:
                     action = mm_cfg.APPROVE
                 else:
                     # The password didn't match.  Re-pend the message and
@@ -1570,7 +1570,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
                 value = line[i+1:].lstrip()
                 try:
                     cre = re.compile(value, re.IGNORECASE)
-                except re.error, e:
+                except re.error as e:
                     # The regexp was malformed.  BAW: should do a better
                     # job of informing the list admin.
                     syslog('config', '''\
@@ -1609,7 +1609,7 @@ bad regexp in bounce_matching_header line: %s
             return 1
         today = time.localtime()[:3]
         info = self.hold_and_cmd_autoresponses.get(sender)
-        if info is None or info[0] <> today:
+        if info is None or info[0] != today:
             # First time we've seen a -request/post-hold for this sender
             self.hold_and_cmd_autoresponses[sender] = (today, 1)
             # BAW: no check for MAX_AUTORESPONSES_PER_DAY <= 1
@@ -1677,7 +1677,7 @@ bad regexp in bounce_matching_header line: %s
         plainaddrs = [x.strip() for x in pattern_list if x.strip() and not
                          (x.startswith('^') or x.startswith('@'))]
         addrdict = Utils.List2Dict(plainaddrs, foldcase=1)
-        if addrdict.has_key(email.lower()):
+        if email.lower() in addrdict:
             return email
         for pattern in pattern_list:
             if pattern.startswith('^'):
@@ -1686,7 +1686,7 @@ bad regexp in bounce_matching_header line: %s
                     if re.search(pattern, email, re.IGNORECASE):
                         matched = pattern
                         break
-                except re.error, e:
+                except re.error as e:
                     # BAW: we should probably remove this pattern
                     # The GUI won't add a bad regexp, but at least log it.
                     # The following kludge works because the ban_list stuff
@@ -1741,4 +1741,4 @@ bad regexp in bounce_matching_header line: %s
             langs.append(mm_cfg.DEFAULT_SERVER_LANGUAGE)
         # When testing, it's possible we've disabled a language, so just
         # filter things out so we don't get tracebacks.
-        return [lang for lang in langs if mm_cfg.LC_DESCRIPTIONS.has_key(lang)]
+        return [lang for lang in langs if lang in mm_cfg.LC_DESCRIPTIONS]

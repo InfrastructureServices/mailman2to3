@@ -20,7 +20,7 @@
 import os
 import re
 import time
-import cPickle
+import pickle
 
 from email.MIMEText import MIMEText
 from email.MIMEMessage import MIMEMessage
@@ -91,13 +91,13 @@ class BounceMixin:
     def _queue_bounces(self, listname, addrs, msg):
         today = time.localtime()[:3]
         if self._bounce_events_fp is None:
-            omask = os.umask(006)
+            omask = os.umask(0o06)
             try:
                 self._bounce_events_fp = open(self._bounce_events_file, 'a+b')
             finally:
                 os.umask(omask)
         for addr in addrs:
-            cPickle.dump((listname, addr, today, msg),
+            pickle.dump((listname, addr, today, msg),
                          self._bounce_events_fp, 1)
         self._bounce_events_fp.flush()
         os.fsync(self._bounce_events_fp.fileno())
@@ -112,14 +112,14 @@ class BounceMixin:
         self._bounce_events_fp.seek(0)
         while True:
             try:
-                listname, addr, day, msg = cPickle.load(self._bounce_events_fp)
-            except ValueError, e:
+                listname, addr, day, msg = pickle.load(self._bounce_events_fp)
+            except ValueError as e:
                 syslog('bounce', 'Error reading bounce events: %s', e)
             except EOFError:
                 break
             events.setdefault(listname, []).append((addr, day, msg))
         # Now register all events sorted by list
-        for listname in events.keys():
+        for listname in list(events.keys()):
             mlist = self._open_list(listname)
             mlist.Lock()
             try:
@@ -261,7 +261,7 @@ class BounceRunner(Runner, BounceMixin):
                 return
         # If that still didn't return us any useful addresses, then send it on
         # or discard it.
-        addrs = filter(None, addrs)
+        addrs = [_f for _f in addrs if _f]
         if not addrs:
             syslog('bounce',
                    '%s: bounce message w/no discernable addresses: %s',
@@ -303,7 +303,7 @@ def verp_bounce(mlist, msg):
         if not mo:
             continue                          # no match of regexp
         try:
-            if bmailbox <> mo.group('bounces'):
+            if bmailbox != mo.group('bounces'):
                 continue                      # not a bounce to our list
             # All is good
             addr = '%s@%s' % mo.group('mailbox', 'host')
@@ -335,7 +335,7 @@ def verp_probe(mlist, msg):
         if not mo:
             continue                          # no match of regexp
         try:
-            if bmailbox <> mo.group('bounces'):
+            if bmailbox != mo.group('bounces'):
                 continue                      # not a bounce to our list
             # Extract the token and see if there's an entry
             token = mo.group('token')

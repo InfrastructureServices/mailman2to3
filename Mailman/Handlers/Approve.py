@@ -86,7 +86,7 @@ def process(mlist, msg, msgdata):
         if part is not None and part.get_payload() is not None:
             lines = part.get_payload(decode=True).splitlines()
             line = ''
-            for lineno, line in zip(range(len(lines)), lines):
+            for lineno, line in zip(list(range(len(lines))), lines):
                 if line.strip():
                     break
             i = line.find(':')
@@ -133,7 +133,7 @@ def process(mlist, msg, msgdata):
                     if re.search(pattern, lines):
                         reset_payload(part, re.sub(pattern, '', lines))
                     elif re.search(pattern, re.sub('(?s)<.*?>', '', lines)):
-                        raise Errors.RejectMessage, REJECT
+                        raise Errors.RejectMessage(REJECT)
     if passwd is not missing and mlist.Authenticate((mm_cfg.AuthListPoster,
                                                      mm_cfg.AuthListModerator,
                                                      mm_cfg.AuthListAdmin),

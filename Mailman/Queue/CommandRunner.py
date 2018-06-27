@@ -25,7 +25,7 @@
 
 
 # BAW: get rid of this when we Python 2.2 is a minimum requirement.
-from __future__ import nested_scopes
+
 
 import re
 import sys
@@ -247,7 +247,7 @@ class CommandRunner(Runner):
         # it to prevent replybot response storms.
         precedence = msg.get('precedence', '').lower()
         ack = msg.get('x-ack', '').lower()
-        if ack <> 'yes' and precedence in ('bulk', 'junk', 'list'):
+        if ack != 'yes' and precedence in ('bulk', 'junk', 'list'):
             syslog('vette', 'Precedence: %s message discarded by: %s',
                    precedence, mlist.GetRequestEmail())
             return False

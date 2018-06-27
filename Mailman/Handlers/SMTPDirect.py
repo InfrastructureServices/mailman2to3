@@ -68,27 +68,27 @@ class Connection:
             if mm_cfg.SMTP_USE_TLS:
                 try:
                     self.__conn.starttls()
-                except SMTPException, e:
+                except SMTPException as e:
                     syslog('smtp-failure', 'SMTP TLS error: %s', e)
                     self.quit()
                     raise
                 try:
                     self.__conn.ehlo(mm_cfg.SMTP_HELO_HOST)
-                except SMTPException, e:
+                except SMTPException as e:
                     syslog('smtp-failure', 'SMTP EHLO error: %s', e)
                     self.quit()
                     raise
             try:
                 self.__conn.login(mm_cfg.SMTP_USER, mm_cfg.SMTP_PASSWD)
-            except smtplib.SMTPHeloError, e:
+            except smtplib.SMTPHeloError as e:
                 syslog('smtp-failure', 'SMTP HELO error: %s', e)
                 self.quit()
                 raise
-            except smtplib.SMTPAuthenticationError, e:
+            except smtplib.SMTPAuthenticationError as e:
                 syslog('smtp-failure', 'SMTP AUTH error: %s', e)
                 self.quit()
                 raise
-            except smtplib.SMTPException, e:
+            except smtplib.SMTPException as e:
                 syslog('smtp-failure',
                        'SMTP - no suitable authentication method found: %s', e)
                 self.quit()
@@ -145,7 +145,7 @@ def process(mlist, msg, msgdata):
     # SMTP_MAX_RCPTS.  Note that most MTAs have a limit on the number of
     # recipients they'll swallow in a single transaction.
     deliveryfunc = None
-    if (not msgdata.has_key('personalize') or msgdata['personalize']) and (
+    if ('personalize' not in msgdata or msgdata['personalize']) and (
            msgdata.get('verp') or mlist.personalize):
         chunks = [[recip] for recip in recips]
         msgdata['personalize'] = 1
@@ -155,7 +155,7 @@ def process(mlist, msg, msgdata):
     else:
         chunks = chunkify(recips, mm_cfg.SMTP_MAX_RCPTS)
     # See if this is an unshunted message for which some were undelivered
-    if msgdata.has_key('undelivered'):
+    if 'undelivered' in msgdata:
         chunks = msgdata['undelivered']
     # If we're doing bulk delivery, then we can stitch up the message now.
     if deliveryfunc is None:
@@ -236,7 +236,7 @@ def process(mlist, msg, msgdata):
     # Process any failed deliveries.
     tempfailures = []
     permfailures = []
-    for recip, (code, smtpmsg) in refused.items():
+    for recip, (code, smtpmsg) in list(refused.items()):
         # DRUMS is an internet draft, but it says:
         #
         #    [RFC-821] incorrectly listed the error where an SMTP server
@@ -246,7 +246,7 @@ def process(mlist, msg, msgdata):
         #    code in this case as a temporary, rather than permanent failure
         #    so the logic below works.
         #
-        if code >= 500 and code <> 552:
+        if code >= 500 and code != 552:
             # A permanent failure
             permfailures.append(recip)
         else:
@@ -292,7 +292,7 @@ def chunkify(recips, chunksize):
     chunks = []
     currentchunk = []
     chunklen = 0
-    for bin in buckets.values():
+    for bin in list(buckets.values()):
         for r in bin:
             currentchunk.append(r)
             chunklen = chunklen + 1
@@ -361,7 +361,7 @@ def verpdeliver(mlist, msg, msgdata, envsender, failures, conn):
                 charset = Charset(charset)
                 codec = charset.input_codec or 'ascii'
                 if not isinstance(name, UnicodeType):
-                    name = unicode(name, codec, 'replace')
+                    name = str(name, codec, 'replace')
                 name = Header(name, charset).encode()
                 msgcopy['To'] = formataddr((name, recip))
             else:
@@ -370,7 +370,7 @@ def verpdeliver(mlist, msg, msgdata, envsender, failures, conn):
         # already received this message, as calculated by Message-ID.  See
         # AvoidDuplicates.py for details.
         del msgcopy['x-mailman-copy']
-        if msgdata.get('add-dup-header', {}).has_key(recip):
+        if recip in msgdata.get('add-dup-header', {}):
             msgcopy['X-Mailman-Copy'] = 'yes'
         # If desired, add the RCPT_BASE64_HEADER_NAME header
         if len(mm_cfg.RCPT_BASE64_HEADER_NAME) > 0:
@@ -422,11 +422,11 @@ def bulkdeliver(mlist, msg, msgdata, envsender, failures, conn):
     try:
         # Send the message
         refused = conn.sendmail(envsender, recips, msgtext)
-    except smtplib.SMTPRecipientsRefused, e:
+    except smtplib.SMTPRecipientsRefused as e:
         syslog('smtp-failure', 'All recipients refused: %s, msgid: %s',
                e, msgid)
         refused = e.recipients
-    except smtplib.SMTPResponseException, e:
+    except smtplib.SMTPResponseException as e:
         syslog('smtp-failure', 'SMTP session failure: %s, %s, msgid: %s',
                e.smtp_code, e.smtp_error, msgid)
         # If this was a permanent failure, don't add the recipients to the
@@ -439,7 +439,7 @@ def bulkdeliver(mlist, msg, msgdata, envsender, failures, conn):
             # It's a temporary failure
             for r in recips:
                 refused[r] = (e.smtp_code, e.smtp_error)
-    except (socket.error, IOError, smtplib.SMTPException), e:
+    except (socket.error, IOError, smtplib.SMTPException) as e:
         # MTA not responding, or other socket problems, or any other kind of
         # SMTPException.  In that case, nothing got delivered, so treat this
         # as a temporary failure.

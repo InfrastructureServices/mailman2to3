@@ -53,14 +53,14 @@ class Logger:
         self.close()
 
     def __repr__(self):
-        return '<%s to %s>' % (self.__class__.__name__, `self.__filename`)
+        return '<%s to %s>' % (self.__class__.__name__, repr(self.__filename))
 
     def __get_f(self):
         if self.__fp:
             return self.__fp
         else:
             try:
-                ou = os.umask(007)
+                ou = os.umask(0o07)
                 try:
                     try:
                         f = codecs.open(
@@ -71,7 +71,7 @@ class Logger:
                     self.__fp = f
                 finally:
                     os.umask(ou)
-            except IOError, e:
+            except IOError as e:
                 if self.__nofail:
                     _logexc(self, e)
                     f = self.__fp = sys.__stderr__
@@ -86,11 +86,11 @@ class Logger:
 
     def write(self, msg):
         if isinstance(msg, StringType):
-            msg = unicode(msg, self.__encoding, 'replace')
+            msg = str(msg, self.__encoding, 'replace')
         f = self.__get_f()
         try:
             f.write(msg)
-        except IOError, msg:
+        except IOError as msg:
             _logexc(self, msg)
 
     def writelines(self, lines):

@@ -97,7 +97,7 @@ def process(res, args):
             # BAW: in Python 2.2, use just unicode(h)
             realname = h.__unicode__()
         except UnicodeError:
-            realname = u''
+            realname = ''
         # Coerce to byte string if uh contains only ascii
         try:
             realname = realname.encode('us-ascii')

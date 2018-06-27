@@ -17,7 +17,7 @@
 
 """Cleanse a message for archiving."""
 
-from __future__ import nested_scopes
+
 
 import os
 import re
@@ -25,7 +25,7 @@ import time
 import errno
 import binascii
 import tempfile
-from cStringIO import StringIO
+from io import StringIO
 from types import IntType, StringType
 
 from email.Utils import parsedate
@@ -68,7 +68,7 @@ except ImportError:
         # BAW: sigh, guess_all_extensions() is new in Python 2.3
         all = []
         def check(map):
-            for e, t in map.items():
+            for e, t in list(map.items()):
                 if t == ctype:
                     all.append(e)
         check(mimetypes.types_map)
@@ -146,7 +146,7 @@ def replace_payload_by_text(msg, text, charset):
     # message by a text (scrubbing).
     del msg['content-type']
     del msg['content-transfer-encoding']
-    if isinstance(charset, unicode):
+    if isinstance(charset, str):
         # email 3.0.1 (python 2.4) doesn't like unicode
         charset = charset.encode('us-ascii')
     msg.set_payload(text, charset)
@@ -195,7 +195,7 @@ def process(mlist, msg, msgdata=None):
             # TK: if part is attached then check charset and scrub if none
             if part.get('content-disposition') and \
                not part.get_content_charset():
-                omask = os.umask(002)
+                omask = os.umask(0o02)
                 try:
                     url = save_attachment(mlist, part, dir)
                 finally:
@@ -223,7 +223,7 @@ URL: %(url)s
                 # Pull it out as an attachment but leave it unescaped.  This
                 # is dangerous, but perhaps useful for heavily moderated
                 # lists.
-                omask = os.umask(002)
+                omask = os.umask(0o02)
                 try:
                     url = save_attachment(mlist, part, dir, filter_html=False)
                 finally:
@@ -248,7 +248,7 @@ URL: %(url)s
                 # We're replacing the payload with the decoded payload so this
                 # will just get in the way.
                 del part['content-transfer-encoding']
-                omask = os.umask(002)
+                omask = os.umask(0o02)
                 try:
                     url = save_attachment(mlist, part, dir, filter_html=False)
                 finally:
@@ -260,7 +260,7 @@ URL: %(url)s
         elif ctype == 'message/rfc822':
             # This part contains a submessage, so it too needs scrubbing
             submsg = part.get_payload(0)
-            omask = os.umask(002)
+            omask = os.umask(0o02)
             try:
                 url = save_attachment(mlist, part, dir)
             finally:
@@ -293,7 +293,7 @@ URL: %(url)s
             if payload is None:
                 continue
             size = len(payload)
-            omask = os.umask(002)
+            omask = os.umask(0o02)
             try:
                 url = save_attachment(mlist, part, dir)
             finally:
@@ -339,8 +339,8 @@ URL: %(url)s
             # if sanitize == 2, there could be text/html parts so keep them
             # but skip any other parts.
             partctype = part.get_content_type()
-            if partctype <> 'text/plain' and (partctype <> 'text/html' or
-                                              sanitize <> 2):
+            if partctype != 'text/plain' and (partctype != 'text/html' or
+                                              sanitize != 2):
                 text.append(_('Skipped content of type %(partctype)s\n'))
                 continue
             try:
@@ -361,14 +361,14 @@ URL: %(url)s
                 partcharset = str(partcharset)
             else:
                 partcharset = part.get_content_charset()
-            if partcharset and partcharset <> charset:
+            if partcharset and partcharset != charset:
                 try:
-                    t = unicode(t, partcharset, 'replace')
+                    t = str(t, partcharset, 'replace')
                 except (UnicodeError, LookupError, ValueError,
                         AssertionError):
                     # We can get here if partcharset is bogus in come way.
                     # Replace funny characters.  We use errors='replace'
-                    t = unicode(t, 'ascii', 'replace')
+                    t = str(t, 'ascii', 'replace')
                 try:
                     # Should use HTML-Escape, or try generalizing to UTF-8
                     t = t.encode(charset, 'replace')
@@ -386,7 +386,7 @@ URL: %(url)s
         # The i18n separator is in the list's charset. Coerce it to the
         # message charset.
         try:
-            s = unicode(sep, lcset, 'replace')
+            s = str(sep, lcset, 'replace')
             sep = s.encode(charset, 'replace')
         except (UnicodeError, LookupError, ValueError,
                 AssertionError):
@@ -403,14 +403,14 @@ URL: %(url)s
 def makedirs(dir):
     # Create all the directories to store this attachment in
     try:
-        os.makedirs(dir, 02775)
+        os.makedirs(dir, 0o2775)
         # Unfortunately, FreeBSD seems to be broken in that it doesn't honor
         # the mode arg of mkdir().
         def twiddle(arg, dirname, names):
-            os.chmod(dirname, 02775)
+            os.chmod(dirname, 0o2775)
         os.path.walk(dir, twiddle, None)
-    except OSError, e:
-        if e.errno <> errno.EEXIST: raise
+    except OSError as e:
+        if e.errno != errno.EEXIST: raise
 
 
 
@@ -526,7 +526,7 @@ def save_attachment(mlist, msg, dir, filter_html=True):
     # Now calculate the url
     baseurl = mlist.GetBaseArchiveURL()
     # Private archives will likely have a trailing slash.  Normalize.
-    if baseurl[-1] <> '/':
+    if baseurl[-1] != '/':
         baseurl += '/'
     # A trailing space in url string may save users who are using
     # RFC-1738 compliant MUA (Not Mozilla).

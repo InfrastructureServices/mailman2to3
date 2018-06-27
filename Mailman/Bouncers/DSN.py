@@ -23,7 +23,7 @@ been audited for differences between the two.
 
 from email.Iterators import typed_subpart_iterator
 from email.Utils import parseaddr
-from cStringIO import StringIO
+from io import StringIO
 
 from Mailman.Bouncers.BouncerAPI import Stop
 
@@ -84,7 +84,7 @@ def check(msg):
         if a is not None:
             realname, a = parseaddr(a)
             rtnaddrs[a] = True
-    return rtnaddrs.keys()
+    return list(rtnaddrs.keys())
 
 
 
@@ -108,6 +108,6 @@ def process(msg):
     # The report-type parameter should be "delivery-status", but it seems that
     # some DSN generating MTAs don't include this on the Content-Type: header,
     # so let's relax the test a bit.
-    if not msg.is_multipart() or msg.get_content_subtype() <> 'report':
+    if not msg.is_multipart() or msg.get_content_subtype() != 'report':
         return None
     return check(msg)

@@ -50,8 +50,8 @@ def main():
         doc.AddItem(Header(2, _("Error")))
         doc.AddItem(Bold(_('Invalid options to CGI script.')))
         # Send this with a 400 status.
-        print 'Status: 400 Bad Request'
-        print doc.Format()
+        print('Status: 400 Bad Request')
+        print(doc.Format())
         return
 
     parts = Utils.GetPathPieces()
@@ -62,10 +62,10 @@ def main():
         doc.AddItem(
             Header(3, Bold(FontAttr(title, color='#ff0000', size='+2'))))
         syslog('error', 'Bad URL specification: %s', parts)
-    elif cgidata.has_key('doit'):
+    elif 'doit' in cgidata:
         # We must be processing the list creation request
         process_request(doc, cgidata)
-    elif cgidata.has_key('clear'):
+    elif 'clear' in cgidata:
         request_creation(doc)
     else:
         # Put up the list creation request form
@@ -79,7 +79,7 @@ def main():
                 Link(Utils.ScriptURL('admin'),
                      _('administrative list overview')).Format())
     doc.AddItem(MailmanLogo())
-    print doc.Format()
+    print(doc.Format())
 
 
 
@@ -141,7 +141,7 @@ def process_request(doc, cgidata):
         password = confirm = Utils.MakeRandomPassword(
             mm_cfg.ADMIN_PASSWORD_LENGTH)
     else:
-        if password <> confirm:
+        if password != confirm:
             request_creation(doc, cgidata,
                              _('Initial list passwords do not match'))
             return
@@ -169,7 +169,7 @@ def process_request(doc, cgidata):
     # Make sure the web hostname matches one of our virtual domains
     hostname = Utils.get_domain()
     if mm_cfg.VIRTUAL_HOST_OVERVIEW and \
-           not mm_cfg.VIRTUAL_HOSTS.has_key(hostname):
+           hostname not in mm_cfg.VIRTUAL_HOSTS:
         safehostname = Utils.websafe(hostname)
         request_creation(doc, cgidata,
                          _('Unknown virtual host: %(safehostname)s'))
@@ -195,14 +195,14 @@ def process_request(doc, cgidata):
         # Guarantee that all newly created files have the proper permission.
         # proper group ownership should be assured by the autoconf script
         # enforcing that all directories have the group sticky bit set
-        oldmask = os.umask(002)
+        oldmask = os.umask(0o02)
         try:
             try:
                 mlist.Create(listname, owner, pw, langs, emailhost,
                              urlhost=hostname)
             finally:
                 os.umask(oldmask)
-        except Errors.EmailAddressError, e:
+        except Errors.EmailAddressError as e:
             if e.args:
                 s = Utils.websafe(e.args[0])
             else:
@@ -215,7 +215,7 @@ def process_request(doc, cgidata):
             request_creation(doc, cgidata,
                              _('List already exists: %(listname)s'))
             return
-        except Errors.BadListNameError, e:
+        except Errors.BadListNameError as e:
             if e.args:
                 s = Utils.websafe(e.args[0])
             else:
@@ -404,9 +404,9 @@ def request_creation(doc, cgidata=dummy, errmsg=None):
     # Create the table of initially supported languages, sorted on the long
     # name of the language.
     revmap = {}
-    for key, (name, charset, direction) in mm_cfg.LC_DESCRIPTIONS.items():
+    for key, (name, charset, direction) in list(mm_cfg.LC_DESCRIPTIONS.items()):
         revmap[_(name)] = key
-    langnames = revmap.keys()
+    langnames = list(revmap.keys())
     langnames.sort()
     langs = []
     for name in langnames:

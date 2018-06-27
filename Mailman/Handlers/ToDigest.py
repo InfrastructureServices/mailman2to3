@@ -31,7 +31,7 @@ import copy
 import time
 import traceback
 from types import ListType
-from cStringIO import StringIO
+from io import StringIO
 
 from email.Parser import Parser
 from email.Generator import Generator
@@ -57,7 +57,7 @@ from Mailman.Logging.Syslog import syslog
 
 _ = i18n._
 
-UEMPTYSTRING = u''
+UEMPTYSTRING = ''
 EMPTYSTRING = ''
 
 try:
@@ -71,7 +71,7 @@ except NameError:
 def to_cset_out(text, lcset):
     # Convert text from unicode or lcset to output cset.
     ocset = Charset(lcset).get_output_charset() or lcset
-    if isinstance(text, unicode):
+    if isinstance(text, str):
         return text.encode(ocset, 'replace')
     else:
         return text.decode(lcset, 'replace').encode(ocset, 'replace')
@@ -83,7 +83,7 @@ def process(mlist, msg, msgdata):
     if not mlist.digestable or msgdata.get('isdigest'):
         return
     mboxfile = os.path.join(mlist.fullpath(), 'digest.mbox')
-    omask = os.umask(007)
+    omask = os.umask(0o07)
     try:
         mboxfp = open(mboxfile, 'a+')
     finally:
@@ -108,7 +108,7 @@ def process(mlist, msg, msgdata):
             mboxfp.seek(0)
             send_digests(mlist, mboxfp)
             os.unlink(mboxfile)
-        except Exception, errmsg:
+        except Exception as errmsg:
             # Bare except is generally prohibited in Mailman, but we can't
             # forecast what exceptions can occur here.
             syslog('error', 'send_digests() failed: %s', errmsg)
@@ -130,11 +130,11 @@ def send_digests(mlist, mboxfp):
         if freq == 0 and timetup[0] < now[0]:
             # Yearly
             bump = True
-        elif freq == 1 and timetup[1] <> now[1]:
+        elif freq == 1 and timetup[1] != now[1]:
             # Monthly, but we take a cheap way to calculate this.  We assume
             # that the clock isn't going to be reset backwards.
             bump = True
-        elif freq == 2 and (timetup[1] % 4 <> now[1] % 4):
+        elif freq == 2 and (timetup[1] % 4 != now[1] % 4):
             # Quarterly, same caveat
             bump = True
         elif freq == 3:
@@ -143,7 +143,7 @@ def send_digests(mlist, mboxfp):
             weeknum_now = int(time.strftime('%W', now))
             if weeknum_now > weeknum_last or timetup[0] > now[0]:
                 bump = True
-        elif freq == 4 and timetup[7] <> now[7]:
+        elif freq == 4 and timetup[7] != now[7]:
             # Daily
             bump = True
         if bump:
@@ -212,8 +212,8 @@ def send_i18n_digests(mlist, mboxfp):
     masthead['Content-Description'] = digestid
     mimemsg.attach(masthead)
     # RFC 1153
-    print >> plainmsg, mastheadtxt
-    print >> plainmsg
+    print(mastheadtxt, file=plainmsg)
+    print(file=plainmsg)
     # Now add the optional digest header but only if more than whitespace.
     if re.sub('\s', '', mlist.digest_header):
         headertxt = decorate(mlist, mlist.digest_header, _('digest header'))
@@ -222,8 +222,8 @@ def send_i18n_digests(mlist, mboxfp):
         header['Content-Description'] = _('Digest Header')
         mimemsg.attach(header)
         # RFC 1153
-        print >> plainmsg, headertxt
-        print >> plainmsg
+        print(headertxt, file=plainmsg)
+        print(file=plainmsg)
     # Now we have to cruise through all the messages accumulated in the
     # mailbox file.  We can't add these messages to the plainmsg and mimemsg
     # yet, because we first have to calculate the table of contents
@@ -232,17 +232,17 @@ def send_i18n_digests(mlist, mboxfp):
     #
     # Meanwhile prepare things for the table of contents
     toc = StringIO()
-    print >> toc, _("Today's Topics:\n")
+    print(_("Today's Topics:\n"), file=toc)
     # Now cruise through all the messages in the mailbox of digest messages,
     # building the MIME payload and core of the RFC 1153 digest.  We'll also
     # accumulate Subject: headers and authors for the table-of-contents.
     messages = []
     msgcount = 0
-    msg = mbox.next()
+    msg = next(mbox)
     while msg is not None:
         if msg == '':
             # It was an unparseable message
-            msg = mbox.next()
+            msg = next(mbox)
             continue
         msgcount += 1
         messages.append(msg)
@@ -275,10 +275,10 @@ def send_i18n_digests(mlist, mboxfp):
         first = True
         for line in slines:
             if first:
-                print >> toc, ' ', line
+                print(' ', line, file=toc)
                 first = False
             else:
-                print >> toc, '     ', line.lstrip()
+                print('     ', line.lstrip(), file=toc)
         # We do not want all the headers of the original message to leak
         # through in the digest messages.  For this phase, we'll leave the
         # same set of headers in both digests, i.e. those required in RFC 1153
@@ -290,20 +290,20 @@ def send_i18n_digests(mlist, mboxfp):
         for header in (mm_cfg.MIME_DIGEST_KEEP_HEADERS +
                        mm_cfg.PLAIN_DIGEST_KEEP_HEADERS):
             all_keepers[header] = True
-        all_keepers = all_keepers.keys()
+        all_keepers = list(all_keepers.keys())
         for keep in all_keepers:
             keeper[keep] = msg.get_all(keep, [])
         # Now remove all unkempt headers :)
-        for header in msg.keys():
+        for header in list(msg.keys()):
             del msg[header]
         # And add back the kept header in the RFC 1153 designated order
         for keep in all_keepers:
             for field in keeper[keep]:
                 msg[keep] = field
         # And a bit of extra stuff
-        msg['Message'] = `msgcount`
+        msg['Message'] = repr(msgcount)
         # Get the next message in the digest mailbox
-        msg = mbox.next()
+        msg = next(mbox)
     # Now we're finished with all the messages in the digest.  First do some
     # sanity checking and then on to adding the toc.
     if msgcount == 0:
@@ -315,11 +315,11 @@ def send_i18n_digests(mlist, mboxfp):
     tocpart['Content-Description']= _("Today's Topics (%(msgcount)d messages)")
     mimemsg.attach(tocpart)
     # RFC 1153
-    print >> plainmsg, toctext
-    print >> plainmsg
+    print(toctext, file=plainmsg)
+    print(file=plainmsg)
     # For RFC 1153 digests, we now need the standard separator
-    print >> plainmsg, separator70
-    print >> plainmsg
+    print(separator70, file=plainmsg)
+    print(file=plainmsg)
     # Now go through and add each message
     mimedigest = MIMEBase('multipart', 'digest')
     mimemsg.attach(mimedigest)
@@ -332,38 +332,38 @@ def send_i18n_digests(mlist, mboxfp):
         if first:
             first = False
         else:
-            print >> plainmsg, separator30
-            print >> plainmsg
+            print(separator30, file=plainmsg)
+            print(file=plainmsg)
         # Use Mailman.Handlers.Scrubber.process() to get plain text
         try:
             msg = scrubber(mlist, msg)
         except Errors.DiscardMessage:
-            print >> plainmsg, _('[Message discarded by content filter]')
+            print(_('[Message discarded by content filter]'), file=plainmsg)
             continue
         # Honor the default setting
         for h in mm_cfg.PLAIN_DIGEST_KEEP_HEADERS:
             if msg[h]:
                 uh = Utils.wrap('%s: %s' % (h, Utils.oneline(msg[h], lcset)))
                 uh = '\n\t'.join(uh.split('\n'))
-                print >> plainmsg, uh
-        print >> plainmsg
+                print(uh, file=plainmsg)
+        print(file=plainmsg)
         # If decoded payload is empty, this may be multipart message.
         # -- just stringfy it.
         payload = msg.get_payload(decode=True) \
                   or msg.as_string().split('\n\n',1)[1]
         mcset = msg.get_content_charset('')
-        if mcset and mcset <> lcset and mcset <> lcset_out:
+        if mcset and mcset != lcset and mcset != lcset_out:
             try:
-                payload = unicode(payload, mcset, 'replace'
+                payload = str(payload, mcset, 'replace'
                           ).encode(lcset, 'replace')
             except (UnicodeError, LookupError):
                 # TK: Message has something unknown charset.
                 #     _out means charset in 'outer world'.
-                payload = unicode(payload, lcset_out, 'replace'
+                payload = str(payload, lcset_out, 'replace'
                           ).encode(lcset, 'replace')
-        print >> plainmsg, payload
+        print(payload, file=plainmsg)
         if not payload.endswith('\n'):
-            print >> plainmsg
+            print(file=plainmsg)
     # Now add the footer but only if more than whitespace.
     if re.sub('\s', '', mlist.digest_footer):
         footertxt = decorate(mlist, mlist.digest_footer, _('digest footer'))
@@ -375,14 +375,14 @@ def send_i18n_digests(mlist, mboxfp):
         # MAS: There is no real place for the digest_footer in an RFC 1153
         # compliant digest, so add it as an additional message with
         # Subject: Digest Footer
-        print >> plainmsg, separator30
-        print >> plainmsg
-        print >> plainmsg, 'Subject: ' + _('Digest Footer')
-        print >> plainmsg
-        print >> plainmsg, footertxt
-        print >> plainmsg
-        print >> plainmsg, separator30
-        print >> plainmsg
+        print(separator30, file=plainmsg)
+        print(file=plainmsg)
+        print('Subject: ' + _('Digest Footer'), file=plainmsg)
+        print(file=plainmsg)
+        print(footertxt, file=plainmsg)
+        print(file=plainmsg)
+        print(separator30, file=plainmsg)
+        print(file=plainmsg)
     # Do the last bit of stuff for each digest type
     signoff = _('End of ') + digestid
     # MIME
@@ -393,8 +393,8 @@ def send_i18n_digests(mlist, mboxfp):
     # included for (marginally useful) backwards compatibility.
     mimemsg.postamble = signoff
     # rfc1153
-    print >> plainmsg, signoff
-    print >> plainmsg, '*' * len(signoff)
+    print(signoff, file=plainmsg)
+    print('*' * len(signoff), file=plainmsg)
     # Do our final bit of housekeeping, and then send each message to the
     # outgoing queue for delivery.
     mlist.next_digest_number += 1
@@ -402,12 +402,12 @@ def send_i18n_digests(mlist, mboxfp):
     # Calculate the recipients lists
     plainrecips = []
     mimerecips = []
-    drecips = mlist.getDigestMemberKeys() + mlist.one_last_digest.keys()
+    drecips = mlist.getDigestMemberKeys() + list(mlist.one_last_digest.keys())
     for user in mlist.getMemberCPAddresses(drecips):
         # user might be None if someone who toggled off digest delivery
         # subsequently unsubscribed from the mailing list.  Also, filter out
         # folks who have disabled delivery.
-        if user is None or mlist.getDeliveryStatus(user) <> ENABLED:
+        if user is None or mlist.getDeliveryStatus(user) != ENABLED:
             continue
         # Otherwise, decide whether they get MIME or RFC 1153 digests
         if mlist.getMemberOption(user, mm_cfg.DisableMime):

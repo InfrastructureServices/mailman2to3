@@ -96,7 +96,7 @@ class GUIBase:
                         bad_addrs.append(addr)
                 addrs.append(addr)
             if bad_addrs:
-                raise Errors.EmailAddressError, ', '.join(bad_addrs)
+                raise Errors.EmailAddressError(', '.join(bad_addrs))
             return addrs
         # This is a host name, i.e. verbatim
         if wtype == mm_cfg.Host:
@@ -137,7 +137,7 @@ class GUIBase:
 
     def _setValue(self, mlist, property, val, doc):
         # Set the value, or override to take special action on the property
-        if not property.startswith('_') and getattr(mlist, property) <> val:
+        if not property.startswith('_') and getattr(mlist, property) != val:
             setattr(mlist, property, val)
 
     def _postValidate(self, mlist, doc):
@@ -157,9 +157,9 @@ class GUIBase:
             #
             # The property may be uploadable...
             uploadprop = property + '_upload'
-            if cgidata.has_key(uploadprop) and cgidata[uploadprop].value:
+            if uploadprop in cgidata and cgidata[uploadprop].value:
                 val = cgidata[uploadprop].value
-            elif not cgidata.has_key(property):
+            elif property not in cgidata:
                 continue
             elif isinstance(cgidata[property], ListType):
                 val = [x.value for x in cgidata[property]]
@@ -172,7 +172,7 @@ class GUIBase:
             except ValueError:
                 doc.addError(_('Invalid value for variable: %(property)s'))
             # This is the parent of MMBadEmailError and MMHostileAddress
-            except Errors.EmailAddressError, error:
+            except Errors.EmailAddressError as error:
                 error = Utils.websafe(str(error))
                 doc.addError(
                     _('Bad email address for option %(property)s: %(error)s'))
@@ -194,11 +194,11 @@ class GUIBase:
             ids = Utils.percent_identifiers(val)
         # Here's the list of allowable interpolations
         for allowed in alloweds:
-            if ids.has_key(allowed):
+            if allowed in ids:
                 del ids[allowed]
         if ids:
             # What's left are not allowed
-            badkeys = ids.keys()
+            badkeys = list(ids.keys())
             badkeys.sort()
             bad = BADJOINER.join(badkeys)
             doc.addError(_(
@@ -214,7 +214,7 @@ class GUIBase:
         # the corrected string.
         if not dollarp:
             fixed = Utils.to_percent(Utils.to_dollar(val))
-            if fixed <> val:
+            if fixed != val:
                 doc.addError(_(
                     """Your <code>%(property)s</code> string appeared to
                     have some correctable problems in its new value.

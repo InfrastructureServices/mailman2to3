@@ -26,9 +26,9 @@ elsewhere.
 import os
 import time
 import errno
-import cPickle
+import pickle
 import marshal
-from cStringIO import StringIO
+from io import StringIO
 
 import email
 from email.MIMEMessage import MIMEMessage
@@ -85,11 +85,11 @@ class ListAdmin:
             try:
                 fp = open(self.__filename)
                 try:
-                    self.__db = cPickle.load(fp)
+                    self.__db = pickle.load(fp)
                 finally:
                     fp.close()
-            except IOError, e:
-                if e.errno <> errno.ENOENT: raise
+            except IOError as e:
+                if e.errno != errno.ENOENT: raise
                 self.__db = {}
                 # put version number in new database
                 self.__db['version'] = IGN, mm_cfg.REQUESTS_FILE_SCHEMA_VERSION
@@ -103,11 +103,11 @@ class ListAdmin:
             # should we be as paranoid as for the config.pck file?  Should we
             # use pickle?
             tmpfile = self.__filename + '.tmp'
-            omask = os.umask(007)
+            omask = os.umask(0o07)
             try:
                 fp = open(tmpfile, 'w')
                 try:
-                    cPickle.dump(self.__db, fp, 1)
+                    pickle.dump(self.__db, fp, 1)
                     fp.flush()
                     os.fsync(fp.fileno())
                 finally:
@@ -123,7 +123,7 @@ class ListAdmin:
         while True:
             next = self.next_request_id
             self.next_request_id += 1
-            if not self.__db.has_key(next):
+            if next not in self.__db:
                 break
         return next
 
@@ -137,7 +137,7 @@ class ListAdmin:
 
     def __getmsgids(self, rtype):
         self.__opendb()
-        ids = [k for k, (op, data) in self.__db.items() if op == rtype]
+        ids = [k for k, (op, data) in list(self.__db.items()) if op == rtype]
         ids.sort()
         return ids
 
@@ -172,7 +172,7 @@ class ListAdmin:
         else:
             assert rtype == SUBSCRIPTION
             status = self.__handlesubscription(data, value, comment)
-        if status <> DEFER:
+        if status != DEFER:
             # BAW: Held message ids are linked to Pending cookies, allowing
             # the user to cancel their post before the moderator has approved
             # it.  We should probably remove the cookie associated with this
@@ -196,12 +196,12 @@ class ListAdmin:
         else:
             ext = 'txt'
         filename = 'heldmsg-%s-%d.%s' % (self.internal_name(), id, ext)
-        omask = os.umask(007)
+        omask = os.umask(0o07)
         try:
             fp = open(os.path.join(mm_cfg.DATA_DIR, filename), 'w')
             try:
                 if mm_cfg.HOLD_MESSAGES_AS_PICKLES:
-                    cPickle.dump(msg, fp, 1)
+                    pickle.dump(msg, fp, 1)
                 else:
                     g = Generator(fp)
                     g.flatten(msg, 1)
@@ -241,12 +241,12 @@ class ListAdmin:
             # Preserve the message as plain text, not as a pickle
             try:
                 fp = open(path)
-            except IOError, e:
-                if e.errno <> errno.ENOENT: raise
+            except IOError as e:
+                if e.errno != errno.ENOENT: raise
                 return LOST
             try:
                 if path.endswith('.pck'):
-                    msg = cPickle.load(fp)
+                    msg = pickle.load(fp)
                 else:
                     assert path.endswith('.txt'), '%s not .pck or .txt' % path
                     msg = fp.read()
@@ -277,8 +277,8 @@ class ListAdmin:
             # Approved.
             try:
                 msg = readMessage(path)
-            except IOError, e:
-                if e.errno <> errno.ENOENT: raise
+            except IOError as e:
+                if e.errno != errno.ENOENT: raise
                 return LOST
             msg = readMessage(path)
             msgdata['approved'] = 1
@@ -321,8 +321,8 @@ class ListAdmin:
             # normal delivery.
             try:
                 copy = readMessage(path)
-            except IOError, e:
-                if e.errno <> errno.ENOENT: raise
+            except IOError as e:
+                if e.errno != errno.ENOENT: raise
                 raise Errors.LostHeldMessage(path)
             # It's possible the addr is a comma separated list of addresses.
             addrs = getaddresses([addr])
@@ -367,11 +367,11 @@ class ListAdmin:
             syslog('vette', note)
         # Always unlink the file containing the message text.  It's not
         # necessary anymore, regardless of the disposition of the message.
-        if status <> DEFER:
+        if status != DEFER:
             try:
                 os.unlink(path)
-            except OSError, e:
-                if e.errno <> errno.ENOENT: raise
+            except OSError as e:
+                if e.errno != errno.ENOENT: raise
                 # We lost the message text file.  Clean up our housekeeping
                 # and inform of this status.
                 return LOST
@@ -553,19 +553,19 @@ class ListAdmin:
             finally:
                 fp.close()
             os.unlink(filename)
-        except IOError, e:
-            if e.errno <> errno.ENOENT: raise
+        except IOError as e:
+            if e.errno != errno.ENOENT: raise
             filename = os.path.join(self.fullpath(), 'request.pck')
             try:
                 fp = open(filename)
                 try:
-                    self.__db = cPickle.load(fp)
+                    self.__db = pickle.load(fp)
                 finally:
                     fp.close()
-            except IOError, e:
-                if e.errno <> errno.ENOENT: raise
+            except IOError as e:
+                if e.errno != errno.ENOENT: raise
                 self.__db = {}
-        for id, x in self.__db.items():
+        for id, x in list(self.__db.items()):
             # A bug in versions 2.1.1 through 2.1.11 could have resulted in
             # just info being stored instead of (op, info)
             if len(x) == 2:
@@ -621,7 +621,7 @@ def readMessage(path):
             msg = email.message_from_file(fp, Message.Message)
         else:
             assert ext == '.pck'
-            msg = cPickle.load(fp)
+            msg = pickle.load(fp)
     finally:
         fp.close()
     return msg

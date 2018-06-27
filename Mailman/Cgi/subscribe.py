@@ -22,8 +22,8 @@ import os
 import cgi
 import time
 import signal
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 import json
 
 from Mailman import mm_cfg
@@ -54,20 +54,20 @@ def main():
     if not parts:
         doc.AddItem(Header(2, _("Error")))
         doc.AddItem(Bold(_('Invalid options to CGI script')))
-        print doc.Format()
+        print(doc.Format())
         return
 
     listname = parts[0].lower()
     try:
         mlist = MailList.MailList(listname, lock=0)
-    except Errors.MMListError, e:
+    except Errors.MMListError as e:
         # Avoid cross-site scripting attacks
         safelistname = Utils.websafe(listname)
         doc.AddItem(Header(2, _("Error")))
         doc.AddItem(Bold(_('No such list <em>%(safelistname)s</em>')))
         # Send this with a 404 status.
-        print 'Status: 404 Not Found'
-        print doc.Format()
+        print('Status: 404 Not Found')
+        print(doc.Format())
         syslog('error', 'subscribe: No such list "%s": %s\n', listname, e)
         return
 
@@ -81,8 +81,8 @@ def main():
         doc.AddItem(Header(2, _("Error")))
         doc.AddItem(Bold(_('Invalid options to CGI script.')))
         # Send this with a 400 status.
-        print 'Status: 400 Bad Request'
-        print doc.Format()
+        print('Status: 400 Bad Request')
+        print(doc.Format())
         return
     if not Utils.IsLanguage(language):
         language = mlist.preferred_language
@@ -138,20 +138,20 @@ def process_form(mlist, doc, cgidata, lang):
 
     # Check reCAPTCHA submission, if enabled
     if mm_cfg.RECAPTCHA_SECRET_KEY:
-        request = urllib2.Request(
+        request = urllib.request.Request(
             url = 'https://www.google.com/recaptcha/api/siteverify',
-            data = urllib.urlencode({
+            data = urllib.parse.urlencode({
                 'secret': mm_cfg.RECAPTCHA_SECRET_KEY,
                 'response': cgidata.getvalue('g-recaptcha-response', ''),
                 'remoteip': remote}))
         try:
-            httpresp = urllib2.urlopen(request)
+            httpresp = urllib.request.urlopen(request)
             captcha_response = json.load(httpresp)
             httpresp.close()
             if not captcha_response['success']:
                 e_codes = COMMASPACE.join(captcha_response['error-codes'])
                 results.append(_('reCAPTCHA validation failed: %(e_codes)s'))
-        except urllib2.URLError, e:
+        except urllib.error.URLError as e:
             e_reason = e.reason
             results.append(_('reCAPTCHA could not be validated: %(e_reason)s'))
 
@@ -201,7 +201,7 @@ def process_form(mlist, doc, cgidata, lang):
         password = Utils.MakeRandomPassword()
     elif not password or not confirmed:
         results.append(_('If you supply a password, you must confirm it.'))
-    elif password <> confirmed:
+    elif password != confirmed:
         results.append(_('Your passwords did not match.'))
 
     # Get the digest option for the subscription.
@@ -271,7 +271,7 @@ Confirmation from your email address is required, to prevent anyone from
 subscribing you without permission.  Instructions are being sent to you at
 %(email)s.  Please note your subscription will not start until you confirm
 your subscription.""")
-    except Errors.MMNeedApproval, x:
+    except Errors.MMNeedApproval as x:
         # Results string depends on whether we have private rosters or not
         if privacy_results:
             results = privacy_results
@@ -345,4 +345,4 @@ def print_results(mlist, results, doc, lang):
     replacements['<mm-results>'] = results
     output = mlist.ParseTags('subscribe.html', replacements, lang)
     doc.AddItem(output)
-    print doc.Format()
+    print(doc.Format())

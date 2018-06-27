@@ -45,7 +45,7 @@ except NameError: # Python2.3
 def process(mlist, msg, msgdata):
     # Short circuit if we've already calculated the recipients list,
     # regardless of whether the list is empty or not.
-    if msgdata.has_key('recips'):
+    if 'recips' in msgdata:
         return
     # Should the original sender should be included in the recipients list?
     include_sender = 1
@@ -80,7 +80,7 @@ def process(mlist, msg, msgdata):
 Your urgent message to the %(realname)s mailing list was not authorized for
 delivery.  The original message as received by Mailman is attached.
 """)
-            raise Errors.RejectMessage, Utils.wrap(text)
+            raise Errors.RejectMessage(Utils.wrap(text))
     # Calculate the regular recipients of the message
     recips = [mlist.getMemberCPAddress(m)
               for m in mlist.getRegularMemberKeys()

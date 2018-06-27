@@ -227,4 +227,4 @@ def process(msg, patterns=None):
                     break
         if addrs:
             break
-    return addrs.keys()
+    return list(addrs.keys())

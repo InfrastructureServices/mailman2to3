@@ -56,7 +56,7 @@ class _Syslog:
             if kws:
                 msg %= kws
         # It's really bad if exceptions in the syslogger cause other crashes
-        except Exception, e:
+        except Exception as e:
             msg = 'Bad format "%s": %s: %s' % (origmsg, repr(e), e)
         try:
             logf.write(msg + '\n')
@@ -64,7 +64,7 @@ class _Syslog:
             # Python 2.4 may fail to write 8bit (non-ascii) characters
             # Also, if msg is unicode with non-ascii, quopri.encodestring()
             # will throw UnicodeEncodeError, so avoid that.
-            if isinstance(msg, unicode):
+            if isinstance(msg, str):
                 msg = msg.encode('iso-8859-1', 'replace')
             logf.write(quopri.encodestring(msg) + '\n')
 
@@ -72,7 +72,7 @@ class _Syslog:
     __call__ = write
 
     def close(self):
-        for kind, logger in self._logfiles.items():
+        for kind, logger in list(self._logfiles.items()):
             logger.close()
         self._logfiles.clear()
 

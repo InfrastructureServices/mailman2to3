@@ -56,12 +56,12 @@ class Mailbox(mailbox.PortableUnixMailbox):
         # a newline (but not at the beginning of an empty file).
         try:
             self.fp.seek(-1, 2)
-        except IOError, e:
+        except IOError as e:
             # Assume the file is empty.  We can't portably test the error code
             # returned, since it differs per platform.
             pass
         else:
-            if self.fp.read(1) <> '\n':
+            if self.fp.read(1) != '\n':
                 self.fp.write('\n')
         # Seek to the last char of the mailbox
         self.fp.seek(0, 2)
@@ -70,7 +70,7 @@ class Mailbox(mailbox.PortableUnixMailbox):
         g.flatten(msg, unixfrom=True)
         # Add one more trailing newline for separation with the next message
         # to be appended to the mbox.
-        print >> self.fp
+        print(file=self.fp)
 
 
 

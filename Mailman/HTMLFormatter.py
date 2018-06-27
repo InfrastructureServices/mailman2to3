@@ -96,7 +96,7 @@ class HTMLFormatter:
             if realname and mm_cfg.ROSTER_DISPLAY_REALNAME:
                 showing += " (%s)" % Utils.websafe(realname)
             got = Link(url, showing)
-            if self.getDeliveryStatus(person) <> MemberAdaptor.ENABLED:
+            if self.getDeliveryStatus(person) != MemberAdaptor.ENABLED:
                 got = Italic('(', got, ')')
             items.append(got)
         # Just return the .Format() so this works until I finish
@@ -105,7 +105,7 @@ class HTMLFormatter:
 
     def FormatOptionButton(self, option, value, user):
         if option == mm_cfg.DisableDelivery:
-            optval = self.getDeliveryStatus(user) <> MemberAdaptor.ENABLED
+            optval = self.getDeliveryStatus(user) != MemberAdaptor.ENABLED
         else:
             optval = self.getMemberOption(user, option)
         if optval == value:
@@ -368,9 +368,9 @@ class HTMLFormatter:
         i = 1
         while i < len(parts):
             tag = parts[i].lower()
-            if replacements.has_key(tag):
+            if tag in replacements:
                 repl = replacements[tag]
-                if isinstance(repl, type(u'')):
+                if isinstance(repl, type('')):
                     repl = repl.encode(charset, 'replace')
                 parts[i] = repl
             else:
@@ -408,9 +408,9 @@ class HTMLFormatter:
             '<mm-restricted-list-message>' : \
                 self.RestrictedListMessage(_('The current archive'),
                                            self.archive_private),
-            '<mm-num-reg-users>' : `member_len`,
-            '<mm-num-digesters>' : `dmember_len`,
-            '<mm-num-members>' : (`member_len + dmember_len`),
+            '<mm-num-reg-users>' : repr(member_len),
+            '<mm-num-digesters>' : repr(dmember_len),
+            '<mm-num-members>' : (repr(member_len + dmember_len)),
             '<mm-posting-addr>' : '%s' % self.GetListEmail(),
             '<mm-request-addr>' : '%s' % self.GetRequestEmail(),
             '<mm-owner>' : self.GetOwnerEmail(),
@@ -439,7 +439,7 @@ class HTMLFormatter:
             lang = self.preferred_language
         # Figure out the available languages
         values = self.GetAvailableLanguages()
-        legend = map(_, map(Utils.GetLanguageDescr, values))
+        legend = list(map(_, list(map(Utils.GetLanguageDescr, values))))
         try:
             selected = values.index(lang)
         except ValueError:

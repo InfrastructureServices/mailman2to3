@@ -26,7 +26,7 @@ import os
 import errno
 import traceback
 import re
-from cStringIO import StringIO
+from io import StringIO
 
 from Mailman import mm_cfg
 from Mailman import Mailbox
@@ -47,15 +47,15 @@ except NameError:
 def makelink(old, new):
     try:
         os.symlink(old, new)
-    except OSError, e:
-        if e.errno <> errno.EEXIST:
+    except OSError as e:
+        if e.errno != errno.EEXIST:
             raise
 
 def breaklink(link):
     try:
         os.unlink(link)
-    except OSError, e:
-        if e.errno <> errno.ENOENT:
+    except OSError as e:
+        if e.errno != errno.ENOENT:
             raise
 
 
@@ -93,26 +93,26 @@ class Archiver:
         omask = os.umask(0)
         try:
             try:
-                os.mkdir(self.archive_dir()+'.mbox', 02775)
-            except OSError, e:
-                if e.errno <> errno.EEXIST: raise
+                os.mkdir(self.archive_dir()+'.mbox', 0o2775)
+            except OSError as e:
+                if e.errno != errno.EEXIST: raise
                 # We also create an empty pipermail archive directory into
                 # which we'll drop an empty index.html file into.  This is so
                 # that lists that have not yet received a posting have
                 # /something/ as their index.html, and don't just get a 404.
             try:
-                os.mkdir(self.archive_dir(), 02775)
-            except OSError, e:
-                if e.errno <> errno.EEXIST: raise
+                os.mkdir(self.archive_dir(), 0o2775)
+            except OSError as e:
+                if e.errno != errno.EEXIST: raise
             # See if there's an index.html file there already and if not,
             # write in the empty archive notice.
             indexfile = os.path.join(self.archive_dir(), 'index.html')
             fp = None
             try:
                 fp = open(indexfile)
-            except IOError, e:
-                if e.errno <> errno.ENOENT: raise
-                omask = os.umask(002)
+            except IOError as e:
+                if e.errno != errno.ENOENT: raise
+                omask = os.umask(0o02)
                 try:
                     fp = open(indexfile, 'w')
                 finally:
@@ -152,7 +152,7 @@ class Archiver:
 
     def __archive_file(self, afn):
         """Open (creating, if necessary) the named archive file."""
-        omask = os.umask(002)
+        omask = os.umask(0o02)
         try:
             return Mailbox.Mailbox(open(afn, 'a+'))
         finally:
@@ -169,7 +169,7 @@ class Archiver:
             mbox = self.__archive_file(afn)
             mbox.AppendMessage(post)
             mbox.fp.close()
-        except IOError, msg:
+        except IOError as msg:
             syslog('error', 'Archive file access failure:\n\t%s %s', afn, msg)
             raise
 
@@ -211,7 +211,7 @@ class Archiver:
         else:
             # use the internal archiver
             f = StringIO(txt)
-            import HyperArch
+            from . import HyperArch
             h = HyperArch.HyperArchive(self)
             h.processUnixMailbox(f)
             h.close()

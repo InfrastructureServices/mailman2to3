@@ -26,13 +26,13 @@ import errno
 #
 # package/project modules
 #
-import pipermail
+from . import pipermail
 from Mailman import LockFile
 
 CACHESIZE = pipermail.CACHESIZE
 
 try:
-    import cPickle
+    import pickle
     pickle = cPickle
 except ImportError:
     import pickle
@@ -70,7 +70,7 @@ class DumbBTree:
 
     def __sort(self, dirty=None):
         if self.__dirty == 1 or dirty:
-            self.sorted = self.dict.keys()
+            self.sorted = list(self.dict.keys())
             self.sorted.sort()
             self.__dirty = 0
 
@@ -127,7 +127,7 @@ class DumbBTree:
             self.current_index = len(self.sorted) - 1
             return key, self.dict[key]
 
-    def next(self):
+    def __next__(self):
         try:
             key = self.sorted[self.current_index]
         except IndexError:
@@ -136,7 +136,7 @@ class DumbBTree:
         return key, self.dict[key]
 
     def has_key(self, key):
-        return self.dict.has_key(key)
+        return key in self.dict
 
     def set_location(self, loc):
         index = 0
@@ -176,8 +176,8 @@ class DumbBTree:
                 self.dict = marshal.load(fp)
             finally:
                 fp.close()
-        except IOError, e:
-            if e.errno <> errno.ENOENT: raise
+        except IOError as e:
+            if e.errno != errno.ENOENT: raise
             pass
         except EOFError:
             pass
@@ -185,7 +185,7 @@ class DumbBTree:
             self.__sort(dirty=1)
 
     def close(self):
-        omask = os.umask(007)
+        omask = os.umask(0o07)
         try:
             fp = open(self.path, 'w')
         finally:
@@ -248,9 +248,9 @@ class HyperDatabase(pipermail.Database):
         omask = os.umask(0)
         try:
             try:
-                os.mkdir(arcdir, 02770)
-            except OSError, e:
-                if e.errno <> errno.EEXIST: raise
+                os.mkdir(arcdir, 0o2770)
+            except OSError as e:
+                if e.errno != errno.EEXIST: raise
         finally:
             os.umask(omask)
         for i in ('date', 'author', 'subject', 'article', 'thread'):
@@ -277,7 +277,7 @@ class HyperDatabase(pipermail.Database):
 
     def hasArticle(self, archive, msgid):
         self.__openIndices(archive)
-        return self.articleIndex.has_key(msgid)
+        return msgid in self.articleIndex
 
     def setThreadKey(self, archive, key, msgid):
         self.__openIndices(archive)
@@ -285,7 +285,7 @@ class HyperDatabase(pipermail.Database):
 
     def getArticle(self, archive, msgid):
         self.__openIndices(archive)
-        if not self.__cache.has_key(msgid):
+        if msgid not in self.__cache:
             # get the pickled object out of the DumbBTree
             buf = self.articleIndex[msgid]
             article = self.__cache[msgid] = pickle.loads(buf)
@@ -308,7 +308,7 @@ class HyperDatabase(pipermail.Database):
         self.__openIndices(archive)
         index = getattr(self, index + 'Index')
         try:
-            key, msgid = index.next()
+            key, msgid = next(index)
             return msgid
         except KeyError:
             return None
@@ -318,7 +318,7 @@ class HyperDatabase(pipermail.Database):
         subject = subject.lower()
         try:
             self.subjectIndex.set_location(subject)
-            key, tempid = self.subjectIndex.next()
+            key, tempid = next(self.subjectIndex)
             [subject2, date]= key[:2]
             if subject!=subject2: return None
             return tempid
@@ -340,5 +340,5 @@ class HyperDatabase(pipermail.Database):
         while not finished:
             del self.threadIndex[key]
             try:
-                key, msgid=self.threadIndex.next()
+                key, msgid=next(self.threadIndex)
             except KeyError: finished=1

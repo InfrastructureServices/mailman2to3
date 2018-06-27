@@ -24,7 +24,7 @@ the mailing lists, and whatever else doesn't belong elsewhere.
 
 """
 
-from __future__ import nested_scopes
+
 
 import os
 import sys
@@ -34,9 +34,9 @@ import time
 import errno
 import base64
 import random
-import urllib2
-import urlparse
-import htmlentitydefs
+import urllib.request, urllib.error, urllib.parse
+import urllib.parse
+import html.entities
 import email.Header
 import email.Iterators
 from email.Errors import HeaderParseError
@@ -86,7 +86,7 @@ except ImportError:
     have_ipaddress = False
 
 EMPTYSTRING = ''
-UEMPTYSTRING = u''
+UEMPTYSTRING = ''
 CR = '\r'
 NL = '\n'
 DOT = '.'
@@ -258,18 +258,18 @@ def ValidateEmail(s):
     if not s or s.count(' ') > 0:
         raise Errors.MMBadEmailError
     if _badchars.search(s):
-        raise Errors.MMHostileAddress, s
+        raise Errors.MMHostileAddress(s)
     user, domain_parts = ParseEmail(s)
     # This means local, unqualified addresses, are not allowed
     if not domain_parts:
-        raise Errors.MMBadEmailError, s
+        raise Errors.MMBadEmailError(s)
     if len(domain_parts) < 2:
-        raise Errors.MMBadEmailError, s
+        raise Errors.MMBadEmailError(s)
     # domain parts may only contain ascii letters, digits and hyphen
     # and must not begin with hyphen.
     for p in domain_parts:
         if len(p) == 0 or p[0] == '-' or len(_valid_domain.sub('', p)) > 0:
-            raise Errors.MMHostileAddress, s
+            raise Errors.MMHostileAddress(s)
 
 
 
@@ -307,13 +307,13 @@ def ScriptURL(target, web_page_url=None, absolute=False):
     """
     if web_page_url is None:
         web_page_url = mm_cfg.DEFAULT_URL_PATTERN % get_domain()
-        if web_page_url[-1] <> '/':
+        if web_page_url[-1] != '/':
             web_page_url = web_page_url + '/'
     fullpath = os.environ.get('REQUEST_URI')
     if fullpath is None:
         fullpath = os.environ.get('SCRIPT_NAME', '') + \
                    os.environ.get('PATH_INFO', '')
-    baseurl = urlparse.urlparse(web_page_url)[2]
+    baseurl = urllib.parse.urlparse(web_page_url)[2]
     if not absolute and fullpath.startswith(baseurl):
         # Use relative addressing
         fullpath = fullpath[len(baseurl):]
@@ -393,8 +393,8 @@ def Secure_MakeRandomPassword(length):
                 if fd is None:
                     try:
                         fd = os.open('/dev/urandom', os.O_RDONLY)
-                    except OSError, e:
-                        if e.errno <> errno.ENOENT:
+                    except OSError as e:
+                        if e.errno != errno.ENOENT:
                             raise
                         # We have no available source of cryptographically
                         # secure random characters.  Log an error and fallback
@@ -439,7 +439,7 @@ def set_global_password(pw, siteadmin=True):
     else:
         filename = mm_cfg.LISTCREATOR_PW_FILE
     # rw-r-----
-    omask = os.umask(026)
+    omask = os.umask(0o26)
     try:
         fp = open(filename, 'w')
         fp.write(sha_new(pw).hexdigest() + '\n')
@@ -457,8 +457,8 @@ def get_global_password(siteadmin=True):
         fp = open(filename)
         challenge = fp.read()[:-1]                # strip off trailing nl
         fp.close()
-    except IOError, e:
-        if e.errno <> errno.ENOENT: raise
+    except IOError as e:
+        if e.errno != errno.ENOENT: raise
         # It's okay not to have a site admin password, just return false
         return None
     return challenge
@@ -601,8 +601,8 @@ def findtext(templatefile, dict=None, raw=False, lang=None, mlist=None):
                 try:
                     fp = open(filename)
                     raise OuterExit
-                except IOError, e:
-                    if e.errno <> errno.ENOENT: raise
+                except IOError as e:
+                    if e.errno != errno.ENOENT: raise
                     # Okay, it doesn't exist, keep looping
                     fp = None
     except OuterExit:
@@ -613,8 +613,8 @@ def findtext(templatefile, dict=None, raw=False, lang=None, mlist=None):
         try:
             filename = os.path.join(mm_cfg.TEMPLATE_DIR, 'en', templatefile)
             fp = open(filename)
-        except IOError, e:
-            if e.errno <> errno.ENOENT: raise
+        except IOError as e:
+            if e.errno != errno.ENOENT: raise
             # We never found the template.  BAD!
             raise IOError(errno.ENOENT, 'No template file found', templatefile)
     template = fp.read()
@@ -627,9 +627,9 @@ def findtext(templatefile, dict=None, raw=False, lang=None, mlist=None):
                 text = sdict.interpolate(template)
             except UnicodeError:
                 # Try again after coercing the template to unicode
-                utemplate = unicode(template, GetCharSet(lang), 'replace')
+                utemplate = str(template, GetCharSet(lang), 'replace')
                 text = sdict.interpolate(utemplate)
-        except (TypeError, ValueError), e:
+        except (TypeError, ValueError) as e:
             # The template is really screwed up
             syslog('error', 'broken template: %s\n%s', filename, e)
             pass
@@ -675,7 +675,7 @@ def is_administrivia(msg):
         lines.append(line)
     bodytext = NL.join(lines)
     # See if the body text has only one word, and that word is administrivia
-    if ADMINDATA.has_key(bodytext.strip().lower()):
+    if bodytext.strip().lower() in ADMINDATA:
         return True
     # Look at the first N lines and see if there is any administrivia on the
     # line.  BAW: N is currently hardcoded to 5.  str-ify the Subject: header
@@ -715,9 +715,9 @@ def GetRequestURI(fallback=None, escape=True):
     unless `escape' is set to 0.
     """
     url = fallback
-    if os.environ.has_key('REQUEST_URI'):
+    if 'REQUEST_URI' in os.environ:
         url = os.environ['REQUEST_URI']
-    elif os.environ.has_key('SCRIPT_NAME') and os.environ.has_key('PATH_INFO'):
+    elif 'SCRIPT_NAME' in os.environ and 'PATH_INFO' in os.environ:
         url = os.environ['SCRIPT_NAME'] + os.environ['PATH_INFO']
     if escape:
         return websafe(url)
@@ -732,13 +732,13 @@ def reap(kids, func=None, once=False):
             func()
         try:
             pid, status = os.waitpid(-1, os.WNOHANG)
-        except OSError, e:
+        except OSError as e:
             # If the child procs had a bug we might have no children
-            if e.errno <> errno.ECHILD:
+            if e.errno != errno.ECHILD:
                 raise
             kids.clear()
             break
-        if pid <> 0:
+        if pid != 0:
             try:
                 del kids[pid]
             except KeyError:
@@ -759,7 +759,7 @@ def GetDirection(lang):
     return mm_cfg.LC_DESCRIPTIONS[lang][2]
 
 def IsLanguage(lang):
-    return mm_cfg.LC_DESCRIPTIONS.has_key(lang)
+    return lang in mm_cfg.LC_DESCRIPTIONS
 
 
 
@@ -775,7 +775,7 @@ def get_domain():
         # See the note in Defaults.py concerning DEFAULT_URL
         # vs. DEFAULT_URL_HOST.
         hostname = ((mm_cfg.DEFAULT_URL
-                     and urlparse.urlparse(mm_cfg.DEFAULT_URL)[1])
+                     and urllib.parse.urlparse(mm_cfg.DEFAULT_URL)[1])
                      or mm_cfg.DEFAULT_URL_HOST)
         return hostname.lower()
 
@@ -846,13 +846,13 @@ def to_percent(s):
             parts[i+1] = '%(' + parts[i+1] + ')s'
         else:
             parts[i+2] = '%(' + parts[i+2] + ')s'
-    return EMPTYSTRING.join(filter(None, parts))
+    return EMPTYSTRING.join([_f for _f in parts if _f])
 
 
 def dollar_identifiers(s):
     """Return the set (dictionary) of identifiers found in a $-string."""
     d = {}
-    for name in filter(None, [b or c or None for a, b, c in dre.findall(s)]):
+    for name in [_f for _f in [b or c or None for a, b, c in dre.findall(s)] if _f]:
         d[name] = True
     return d
 
@@ -873,14 +873,14 @@ def canonstr(s, lang=None):
     parts = re.split(r'&(?P<ref>[^;]+);', s)
     def appchr(i):
         # do everything in unicode
-        newparts.append(unichr(i))
+        newparts.append(chr(i))
     def tounicode(s):
         # We want the default fallback to be iso-8859-1 even if the language
         # is English (us-ascii).  This seems like a practical compromise so
         # that non-ASCII characters in names can be used in English lists w/o
         # having to change the global charset for English from us-ascii (which
         # I superstitiously think may have unintended consequences).
-        if isinstance(s, unicode):
+        if isinstance(s, str):
             return s
         if lang is None:
             charset = 'iso-8859-1'
@@ -888,7 +888,7 @@ def canonstr(s, lang=None):
             charset = GetCharSet(lang)
             if charset == 'us-ascii':
                 charset = 'iso-8859-1'
-        return unicode(s, charset, 'replace')
+        return str(s, charset, 'replace')
     while True:
         newparts.append(tounicode(parts.pop(0)))
         if not parts:
@@ -901,7 +901,7 @@ def canonstr(s, lang=None):
                 # Non-convertable, stick with what we got
                 newparts.append(tounicode('&'+ref+';'))
         else:
-            c = htmlentitydefs.entitydefs.get(ref, '?')
+            c = html.entities.entitydefs.get(ref, '?')
             if c.startswith('#') and c.endswith(';'):
                 appchr(int(ref[1:-1]))
             else:
@@ -917,7 +917,7 @@ def canonstr(s, lang=None):
 # html references.  It always returns a byte string.
 def uncanonstr(s, lang=None):
     if s is None:
-        s = u''
+        s = ''
     if lang is None:
         charset = 'us-ascii'
     else:
@@ -929,7 +929,7 @@ def uncanonstr(s, lang=None):
         if isinstance(s, UnicodeType):
             return s.encode(charset)
         else:
-            u = unicode(s, charset)
+            u = str(s, charset)
             return s
     except UnicodeError:
         # Nope, it contains funny characters, so html-ref it
@@ -1207,8 +1207,8 @@ def get_suffixes(url):
     if not url:
         return
     try:
-        d = urllib2.urlopen(url)
-    except urllib2.URLError, e:
+        d = urllib.request.urlopen(url)
+    except urllib.error.URLError as e:
         syslog('error',
                'Unable to retrieve data from %s: %s',
                url, e)
@@ -1245,7 +1245,7 @@ def get_org_dom(domain):
     hits = []
     d = domain.lower().split('.')
     d.reverse()
-    for k in s_dict.keys():
+    for k in list(s_dict.keys()):
         ks = k.split('.')
         if len(d) >= len(ks):
             for i in range(len(ks)-1):
@@ -1310,7 +1310,7 @@ def _DMARCProhibited(mlist, email, dmarc_domain, org=False):
         # validating mailman server won't see the _dmarc RR.  We should
         # mitigate this email to be safe.
         return True
-    except DNSException, e:
+    except DNSException as e:
         syslog('error',
                'DNSException: Unable to query DMARC policy for %s (%s). %s',
                email, dmarc_domain, e.__doc__)
@@ -1351,8 +1351,7 @@ def _DMARCProhibited(mlist, email, dmarc_domain, org=False):
         for name in want_names:
             if name not in results_by_name:
                 continue
-            dmarcs = filter(lambda n: n.startswith('v=DMARC1;'),
-                            results_by_name[name])
+            dmarcs = [n for n in results_by_name[name] if n.startswith('v=DMARC1;')]
             if len(dmarcs) == 0:
                 return 'continue'
             if len(dmarcs) > 1:
@@ -1418,7 +1417,7 @@ fact is returned."""
     recentMemberPostings.setdefault(email,[]).append(now +
                                        float(mlist.member_verbosity_interval)
                                    )
-    x = range(len(recentMemberPostings[email]))
+    x = list(range(len(recentMemberPostings[email])))
     x.reverse()
     for i in x:
         if recentMemberPostings[email][i] < now:
@@ -1427,8 +1426,8 @@ fact is returned."""
     clean_count += 1
     if clean_count >= mm_cfg.VERBOSE_CLEAN_LIMIT:
         clean_count = 0
-        for addr in recentMemberPostings.keys():
-            x = range(len(recentMemberPostings[addr]))
+        for addr in list(recentMemberPostings.keys()):
+            x = list(range(len(recentMemberPostings[addr])))
             x.reverse()
             for i in x:
                 if recentMemberPostings[addr][i] < now:
@@ -1481,27 +1480,27 @@ def _invert_xml(mo):
     # escapes to unicodes.
     try:
         if mo.group(1)[:1] == '#':
-            return unichr(int(mo.group(1)[1:]))
+            return chr(int(mo.group(1)[1:]))
         elif mo.group(1)[:1].lower() == 'u':
-            return unichr(int(mo.group(1)[1:], 16))
+            return chr(int(mo.group(1)[1:], 16))
         else:
-            return(u'\ufffd')
+            return('\ufffd')
     except ValueError:
         # Value is out of range.  Return the unicode replace character.
-        return(u'\ufffd')
+        return('\ufffd')
 
 
 def xml_to_unicode(s, cset):
     """This converts a string s, encoded in cset to a unicode with translation
-    of XML character references and textual \uxxxx escapes.  It is more or less
+    of XML character references and textual \\uxxxx escapes.  It is more or less
     the inverse of unicode.decode(cset, errors='xmlcharrefreplace').  It is
     similar to canonstr above except for replacing invalid refs with the
-    unicode replace character and recognizing \u escapes.
+    unicode replace character and recognizing \\u escapes.
     """
     if isinstance(s, str):
         us = s.decode(cset, 'replace')
-        us = re.sub(u'&(#[0-9]+);', _invert_xml, us)
-        us = re.sub(u'(?i)\\\\(u[a-f0-9]{4})', _invert_xml, us)
+        us = re.sub('&(#[0-9]+);', _invert_xml, us)
+        us = re.sub('(?i)\\\\(u[a-f0-9]{4})', _invert_xml, us)
         return us
     else:
         return s
@@ -1511,7 +1510,7 @@ def banned_ip(ip):
         return False
     if have_ipaddress:
         try:
-            uip = unicode(ip, encoding='us-ascii', errors='replace')
+            uip = str(ip, encoding='us-ascii', errors='replace')
             ptr = ipaddress.ip_address(uip).reverse_pointer
         except ValueError:
             return False

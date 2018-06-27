@@ -50,12 +50,12 @@
 import os
 import re
 import time
-import Cookie
+import http.cookies
 import marshal
 import binascii
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from types import StringType, TupleType
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 try:
     import crypt
@@ -103,9 +103,9 @@ class SecurityManager:
         if authcontext == mm_cfg.AuthUser:
             if user is None:
                 # A bad system error
-                raise TypeError, 'No user supplied for AuthUser context'
+                raise TypeError('No user supplied for AuthUser context')
             secret = self.getMemberPassword(user)
-            userdata = urllib.quote(Utils.ObscureEmail(user), safe='')
+            userdata = urllib.parse.quote(Utils.ObscureEmail(user), safe='')
             key += 'user+%s' % userdata
         elif authcontext == mm_cfg.AuthListPoster:
             secret = self.post_password
@@ -219,7 +219,7 @@ class SecurityManager:
             else:
                 # What is this context???
                 syslog('error', 'Bad authcontext: %s', ac)
-                raise ValueError, 'Bad authcontext: %s' % ac
+                raise ValueError('Bad authcontext: %s' % ac)
         return mm_cfg.UnAuthorized
 
     def WebAuthenticate(self, authcontexts, response, user=None):
@@ -237,7 +237,7 @@ class SecurityManager:
         # Check passwords
         ac = self.Authenticate(authcontexts, response, user)
         if ac:
-            print self.MakeCookie(ac, user)
+            print(self.MakeCookie(ac, user))
             return True
         return False
 
@@ -248,9 +248,9 @@ class SecurityManager:
         # Timestamp
         issued = int(time.time())
         # Get a digest of the secret, plus other information.
-        mac = sha_new(secret + `issued`).hexdigest()
+        mac = sha_new(secret + repr(issued)).hexdigest()
         # Create the cookie object.
-        c = Cookie.SimpleCookie()
+        c = http.cookies.SimpleCookie()
         c[key] = binascii.hexlify(marshal.dumps((issued, mac)))
         # The path to all Mailman stuff, minus the scheme and host,
         # i.e. usually the string `/mailman'
@@ -272,7 +272,7 @@ class SecurityManager:
         # Logout of the session by zapping the cookie.  For safety both set
         # max-age=0 (as per RFC2109) and set the cookie data to the empty
         # string.
-        c = Cookie.SimpleCookie()
+        c = http.cookies.SimpleCookie()
         c[key] = ''
         # The path to all Mailman stuff, minus the scheme and host,
         # i.e. usually the string `/mailman'
@@ -310,12 +310,12 @@ class SecurityManager:
             else:
                 usernames = []
                 prefix = self.internal_name() + '+user+'
-                for k in c.keys():
+                for k in list(c.keys()):
                     if k.startswith(prefix):
                         usernames.append(k[len(prefix):])
             # If any check out, we're golden.  Note: `@'s are no longer legal
             # values in cookie keys.
-            for user in [Utils.UnobscureEmail(urllib.unquote(u))
+            for user in [Utils.UnobscureEmail(urllib.parse.unquote(u))
                          for u in usernames]:
                 ok = self.__checkone(c, authcontext, user)
                 if ok:
@@ -331,7 +331,7 @@ class SecurityManager:
             key, secret = self.AuthContextInfo(authcontext, user)
         except Errors.NotAMemberError:
             return False
-        if not c.has_key(key) or not isinstance(secret, StringType):
+        if key not in c or not isinstance(secret, StringType):
             return False
         # Undo the encoding we performed in MakeCookie() above.  BAW: I
         # believe this is safe from exploit because marshal can't be forced to
@@ -356,12 +356,12 @@ class SecurityManager:
             return False
         # Calculate what the mac ought to be based on the cookie's timestamp
         # and the shared secret.
-        mac = sha_new(secret + `issued`).hexdigest()
-        if mac <> received_mac:
+        mac = sha_new(secret + repr(issued)).hexdigest()
+        if mac != received_mac:
             return False
         # Authenticated!
         # Refresh the cookie
-        print self.MakeCookie(authcontext, user)
+        print(self.MakeCookie(authcontext, user))
         return True
 
 

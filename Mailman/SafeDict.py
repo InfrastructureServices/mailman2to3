@@ -35,7 +35,7 @@ class SafeDict(UserDict):
             if isinstance(key, StringType):
                 return '%('+key+')s'
             else:
-                return '<Missing key: %s>' % `key`
+                return '<Missing key: %s>' % repr(key)
 
     def interpolate(self, template):
         return template % self
@@ -61,7 +61,7 @@ class MsgSafeDict(SafeDict):
 
     def copy(self):
         d = self.data.copy()
-        for k in self.__msg.keys():
+        for k in list(self.__msg.keys()):
             vals = self.__msg.get_all(k)
             if len(vals) == 1:
                 d['msg_'+k.lower()] = vals[0]

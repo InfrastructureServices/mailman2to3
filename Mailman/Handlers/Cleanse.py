@@ -32,13 +32,13 @@ for regexp in mm_cfg.ANONYMOUS_LIST_KEEP_HEADERS:
         if regexp.endswith(':'):
             regexp = regexp[:-1] + '$'
         cres.append(re.compile(regexp, re.IGNORECASE))
-    except re.error, e:
+    except re.error as e:
         syslog('error',
                'ANONYMOUS_LIST_KEEP_HEADERS: ignored bad regexp %s: %s',
                regexp, e)
 
 def remove_nonkeepers(msg):
-    for hdr in msg.keys():
+    for hdr in list(msg.keys()):
         keep = False
         for cre in cres:
             if cre.search(hdr):

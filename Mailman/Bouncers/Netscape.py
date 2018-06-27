@@ -26,7 +26,7 @@ decipher the format here too.
 """
 
 import re
-from cStringIO import StringIO
+from io import StringIO
 
 pcre = re.compile(
     r'This Message was undeliverable due to the following reason:',
@@ -60,7 +60,7 @@ def process(msg):
     plainmsg = None
     leaves = []
     flatten(msg, leaves)
-    for i, subpart in zip(range(len(leaves)-1), leaves):
+    for i, subpart in zip(list(range(len(leaves)-1)), leaves):
         if subpart.get_content_type() == 'text/plain':
             plainmsg = subpart
             break
