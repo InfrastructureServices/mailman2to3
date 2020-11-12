@@ -31,9 +31,9 @@ import marshal
 from io import StringIO
 
 import email
-from email.MIMEMessage import MIMEMessage
-from email.Generator import Generator
-from email.Utils import getaddresses
+from email.mime import message
+from email.generator import Generator
+from email.utils import getaddresses
 
 from Mailman import mm_cfg
 from Mailman import Utils
@@ -62,11 +62,6 @@ LOST = 2
 DASH = '-'
 NL = '\n'
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 
@@ -105,7 +100,7 @@ class ListAdmin:
             tmpfile = self.__filename + '.tmp'
             omask = os.umask(0o07)
             try:
-                fp = open(tmpfile, 'w')
+                fp = open(tmpfile, 'wb')
                 try:
                     pickle.dump(self.__db, fp, 1)
                     fp.flush()
@@ -198,7 +193,7 @@ class ListAdmin:
         filename = 'heldmsg-%s-%d.%s' % (self.internal_name(), id, ext)
         omask = os.umask(0o07)
         try:
-            fp = open(os.path.join(mm_cfg.DATA_DIR, filename), 'w')
+            fp = open(os.path.join(mm_cfg.DATA_DIR, filename), 'wb')
             try:
                 if mm_cfg.HOLD_MESSAGES_AS_PICKLES:
                     pickle.dump(msg, fp, 1)
@@ -256,7 +251,7 @@ class ListAdmin:
             outpath = os.path.join(mm_cfg.SPAM_DIR, spamfile)
             head, ext = os.path.splitext(outpath)
             outpath = head + '.msg'
-            outfp = open(outpath, 'w')
+            outfp = open(outpath, 'wb')
             try:
                 if path.endswith('.pck'):
                     g = Generator(outfp)
@@ -293,7 +288,7 @@ class ListAdmin:
             # Queue the file for delivery by qrunner.  Trying to deliver the
             # message directly here can lead to a huge delay in web
             # turnaround.  Log the moderation and add a header.
-            msg['X-Mailman-Approved-At'] = email.Utils.formatdate(localtime=1)
+            msg['X-Mailman-Approved-At'] = email.utils.formatdate(localtime=1)
             syslog('vette', '%s: held message approved, message-id: %s',
                    self.internal_name(),
                    msg.get('message-id', 'n/a'))

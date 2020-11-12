@@ -40,9 +40,9 @@ from . import pipermail
 import weakref
 import binascii
 
-from email.Header import decode_header, make_header
-from email.Errors import HeaderParseError
-from email.Charset import Charset
+from email.header import decode_header, make_header
+from email.errors import HeaderParseError
+from email.charset import Charset
 
 from Mailman import mm_cfg
 from Mailman import Utils
@@ -88,11 +88,6 @@ if sys.platform == 'darwin':
         resource.setrlimit(resource.RLIMIT_STACK, (newsoft, hard))
 
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 
@@ -305,7 +300,7 @@ class Article(pipermail.Article):
         self.decoded = {}
         cset = Utils.GetCharSet(mlist.preferred_language)
         cset_out = Charset(cset).output_charset or cset
-        if isinstance(cset_out, str):
+        if isinstance(cset_out, (bytes, bytearray)):
             # email 3.0.1 (python 2.4) doesn't like unicode
             cset_out = cset_out.encode('us-ascii')
         charset = message.get_content_charset(cset_out)
@@ -453,7 +448,7 @@ class Article(pipermail.Article):
         # Convert 'field' into Unicode one line string.
         try:
             pairs = decode_header(field)
-            ustr = make_header(pairs).__unicode__()
+            ustr = str(make_header(pairs))
         except (LookupError, UnicodeError, ValueError, HeaderParseError):
             # assume list's language
             cset = Utils.GetCharSet(self._mlist.preferred_language)
@@ -1109,7 +1104,7 @@ class HyperArchive(pipermail.T):
         self.sortarchives()
         omask = os.umask(0o02)
         try:
-            toc = open(os.path.join(self.basedir, 'index.html'), 'w')
+            toc = open(os.path.join(self.basedir, 'index.html'), 'wb')
         finally:
             os.umask(omask)
         toc.write(self.html_TOC())
@@ -1119,7 +1114,7 @@ class HyperArchive(pipermail.T):
         # called by add_article
         omask = os.umask(0o02)
         try:
-            f = open(path, 'w')
+            f = open(path, 'wb')
         finally:
             os.umask(omask)
         f.write(article.as_html())
@@ -1158,7 +1153,7 @@ class HyperArchive(pipermail.T):
                 pass
             try:
                 ou = os.umask(0o02)
-                newz = gzip.open(gzipfile, 'w')
+                newz = gzip.open(gzipfile, 'wb')
             finally:
                 # XXX why is this a finally?
                 os.umask(ou)
@@ -1328,7 +1323,7 @@ class HyperArchive(pipermail.T):
         article.next = next
         omask = os.umask(0o02)
         try:
-            f = open(filename, 'w')
+            f = open(filename, 'wb')
         finally:
             os.umask(omask)
         f.write(article.as_html())

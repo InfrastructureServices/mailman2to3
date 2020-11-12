@@ -18,8 +18,8 @@
 
 """Mixin class with message delivery routines."""
 
-from email.MIMEText import MIMEText
-from email.MIMEMessage import MIMEMessage
+from email.mime import text
+from email.mime import message
 
 from Mailman import mm_cfg
 from Mailman import Errors
@@ -31,11 +31,6 @@ from Mailman.Logging.Syslog import syslog
 
 _ = i18n._
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 
@@ -121,7 +116,7 @@ your membership administrative address, %(addr)s.'''))
         # TK: Make unprintables to ?
         # The list owner should allow users to set language options if they
         # want to use non-us-ascii characters in password and send it back.
-        password = str(password, cset, 'replace').encode(cset, 'replace')
+        password = str(password, cset, 'replace')
         # get the text from the template
         text = Utils.maketext(
             'userpass.txt',
@@ -144,9 +139,9 @@ your membership administrative address, %(addr)s.'''))
             text = _('No reason given')
         if subject is None:
             text = _('(no subject)')
-        text = MIMEText(Utils.wrap(text),
+        text = text.MIMEText(Utils.wrap(text),
                         _charset=Utils.GetCharSet(self.preferred_language))
-        attachment = MIMEMessage(msg)
+        attachment = message.MIMEMessage(msg)
         notice = Message.OwnerNotification(
             self, subject, tomoderators=tomoderators)
         # Make it look like the message is going to the -owner address
@@ -224,9 +219,9 @@ is required.""")))
         outer = Message.UserNotification(member, probeaddr, subject,
                                          lang=ulang)
         outer.set_type('multipart/mixed')
-        text = MIMEText(text, _charset=Utils.GetCharSet(ulang))
+        text = text.MIMEText(text, _charset=Utils.GetCharSet(ulang))
         outer.attach(text)
-        outer.attach(MIMEMessage(msg))
+        outer.attach(message.MIMEMessage(msg))
         # Turn off further VERP'ing in the final delivery step.  We set
         # probe_token for the OutgoingRunner to more easily handling local
         # rejects of probe messages.

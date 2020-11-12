@@ -97,7 +97,7 @@ def process(mlist, msg, msgdata):
     failedrecips = []
     for chunk in recipchunks:
         # TBD: SECURITY ALERT.  This invokes the shell!
-        fp = os.popen(cmd + chunk, 'w')
+        fp = os.popen(cmd + chunk, 'wb')
         fp.write(msgtext)
         status = fp.close()
         if status:

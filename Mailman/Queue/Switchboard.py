@@ -19,7 +19,7 @@
 """
 
 # enqueue() and dequeue() are not symmetric.  enqueue() takes a Message
-# object.  dequeue() returns a email.Message object tree.
+# object.  dequeue() returns a email.message object tree.
 #
 # Message metadata is represented internally as a Python dictionary.  Keys and
 # values must be strings.  When written to a queue directory, the metadata is
@@ -50,11 +50,6 @@ from Mailman.Utils import sha_new
 # 20 bytes of all bits set, maximum sha.digest() value
 shamax = 0xffffffffffffffffffffffffffffffffffffffff
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 # This flag causes messages to be written as pickles (when True) or text files
 # (when False).  Pickles are more efficient because the message doesn't need
@@ -111,14 +106,14 @@ class Switchboard:
         else:
             protocol = 0
             msgsave = pickle.dumps(str(_msg), protocol)
-        hashfood = msgsave + listname + repr(now)
+        hashfood = str(msgsave) + listname + repr(now)
         # Encode the current time into the file name for FIFO sorting in
         # files().  The file name consists of two parts separated by a `+':
         # the received time for this message (i.e. when it first showed up on
         # this system) and the sha hex digest.
         #rcvtime = data.setdefault('received_time', now)
         rcvtime = data.setdefault('received_time', now)
-        filebase = repr(rcvtime) + '+' + sha_new(hashfood).hexdigest()
+        filebase = repr(rcvtime) + '+' + sha_new(hashfood.encode()).hexdigest()
         filename = os.path.join(self.__whichq, filebase + '.pck')
         tmpfile = filename + '.tmp'
         # Always add the metadata schema version number
@@ -133,7 +128,7 @@ class Switchboard:
         # Write to the pickle file the message object and metadata.
         omask = os.umask(0o07)                     # -rw-rw----
         try:
-            fp = open(tmpfile, 'w')
+            fp = open(tmpfile, 'wb')
             try:
                 fp.write(msgsave)
                 pickle.dump(data, fp, protocol)
@@ -151,7 +146,7 @@ class Switchboard:
         filename = os.path.join(self.__whichq, filebase + '.pck')
         backfile = os.path.join(self.__whichq, filebase + '.bak')
         # Read the message object and metadata.
-        fp = open(filename)
+        fp = open(filename, 'rb')
         # Move the file to the backup file name for processing.  If this
         # process crashes uncleanly the .bak file will be used to re-instate
         # the .pck file in order to try again.

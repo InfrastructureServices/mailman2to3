@@ -124,12 +124,7 @@ try:
 except ImportError:
     res = "not ok"
 else:
-    provided = (2, 5, 8)
-    version = tuple(int(v) for v in email.__version__.split('.'))
-    if provided > version:
-        res = "not ok"
-    else:
-        res = "ok"
+    res = "ok"
 fp = open("conftest.out", "w")
 fp.write("%s\n" % res)
 fp.close()
@@ -165,7 +160,7 @@ AC_MSG_CHECKING(Japanese codecs)
 changequote(,)
 cat > conftest.py <<EOF
 try:
-    unicode('OK', 'iso-2022-jp')
+    "OK".encode('iso-2022-jp')
 except LookupError:
     res = "not ok"
 else:
@@ -194,7 +189,7 @@ AC_MSG_CHECKING(Korean codecs)
 changequote(,)
 cat > conftest.py <<EOF
 try:
-    unicode('OK', 'euc-kr')
+    'OK'.encode('euc-kr')
 except LookupError:
     res = "not ok"
 else:
@@ -648,13 +643,13 @@ except OSError:
 else:
     mode = statdata[ST_MODE]
     gid = statdata[ST_GID]
-    if mailmangid <> gid:
+    if mailmangid != gid:
         problems.append("Directory must be owned by group " +
                         groupname + ": " + prefix)
-    if (mode & S_ISGID) <> S_ISGID:
+    if (mode & S_ISGID) != S_ISGID:
         problems.append("Set-gid bit must be set for directory: " + prefix)
     perms = S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH
-    if (mode & perms) <> perms:
+    if (mode & perms) != perms:
         problems.append("Permissions should be at least 02775: " + prefix)
 if not problems:
     msg = "okay\n"
@@ -786,8 +781,8 @@ cat > conftest.py <<EOF
 from socket import *
 fqdn = getfqdn()
 fp = open('conftest.out', 'w')
-print >> fp, fqdn
-print >> fp, fqdn
+print(fqdn, file=fp)
+print(fqdn, file=fp)
 fp.close()
 EOF
 $PYTHON conftest.py
@@ -863,7 +858,6 @@ bin/list_members \
 bin/list_owners \
 bin/mailmanctl \
 bin/mmsitepass \
-bin/msgfmt.py \
 bin/newlist \
 bin/pygettext.py \
 bin/qrunner \

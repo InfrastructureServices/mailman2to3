@@ -22,10 +22,9 @@ import os
 import time
 import email
 import errno
-import cPickle
+import pickle
 import unittest
-from types import ListType
-from email.Generator import Generator
+from email.generator import Generator
 try:
     from Mailman import __init__
 except ImportError:
@@ -64,7 +63,7 @@ from TestBase import TestBase
 
 
 def password(plaintext):
-    return sha_new(plaintext).hexdigest()
+    return sha_new(plaintext.encode()).hexdigest()
 
 
 
@@ -141,8 +140,8 @@ From: aperson@dom.ain
         eq(qmsg.get_content_type(), 'text/plain')
         eq(qmsg.get_param('charset'), 'us-ascii')
         msgid = qmsg['message-id']
-        self.failUnless(msgid.startswith('<mailman.'))
-        self.failUnless(msgid.endswith('._xtest@dom.ain>'))
+        self.assertTrue(msgid.startswith('<mailman.'))
+        self.assertTrue(msgid.endswith('._xtest@dom.ain>'))
         eq(qmsg.get_payload(), """\
 Your message entitled
 
@@ -181,8 +180,8 @@ Subject: Wish you were here
         eq(qmsg.get_content_type(), 'text/plain')
         eq(qmsg.get_param('charset'), 'us-ascii')
         msgid = qmsg['message-id']
-        self.failUnless(msgid.startswith('<mailman.'))
-        self.failUnless(msgid.endswith('._xtest@dom.ain>'))
+        self.assertTrue(msgid.startswith('<mailman.'))
+        self.assertTrue(msgid.endswith('._xtest@dom.ain>'))
         eq(qmsg.get_payload(), """\
 Your message entitled
 
@@ -205,7 +204,7 @@ class TestAfterDelivery(TestBase):
         last_post_time = mlist.last_post_time
         post_id = mlist.post_id
         AfterDelivery.process(mlist, None, None)
-        self.failUnless(mlist.last_post_time > last_post_time)
+        self.assertTrue(mlist.last_post_time > last_post_time)
         self.assertEqual(mlist.post_id, post_id + 1)
 
 
@@ -226,7 +225,7 @@ Approved: wazoo
 """)
         msgdata = {}
         Approve.process(mlist, msg, msgdata)
-        self.failUnless(msgdata.has_key('approved'))
+        self.assertTrue('approved' in msgdata)
         self.assertEqual(msgdata['approved'], 1)
 
     def test_approve_moderator(self):
@@ -238,7 +237,7 @@ Approve: wazoo
 """)
         msgdata = {}
         Approve.process(mlist, msg, msgdata)
-        self.failUnless(msgdata.has_key('approved'))
+        self.assertTrue('approved' in msgdata)
         self.assertEqual(msgdata['approved'], 1)
 
     def test_approved_admin(self):
@@ -250,7 +249,7 @@ Approved: wazoo
 """)
         msgdata = {}
         Approve.process(mlist, msg, msgdata)
-        self.failUnless(msgdata.has_key('approved'))
+        self.assertTrue('approved' in msgdata)
         self.assertEqual(msgdata['approved'], 1)
 
     def test_approve_admin(self):
@@ -262,7 +261,7 @@ Approve: wazoo
 """)
         msgdata = {}
         Approve.process(mlist, msg, msgdata)
-        self.failUnless(msgdata.has_key('approved'))
+        self.assertTrue('approved' in msgdata)
         self.assertEqual(msgdata['approved'], 1)
 
     def test_unapproved(self):
@@ -312,7 +311,7 @@ From: dperson@dom.ain
 
 """, Message.Message)
         CalcRecips.process(self._mlist, msg, msgdata)
-        self.failUnless(msgdata.has_key('recips'))
+        self.assertTrue('recips' in msgdata)
         recips = msgdata['recips']
         recips.sort()
         self.assertEqual(recips, ['aperson@dom.ain', 'bperson@dom.ain',
@@ -327,7 +326,7 @@ From: cperson@dom.ain
         self._mlist.setMemberOption('cperson@dom.ain',
                                     mm_cfg.DontReceiveOwnPosts, 1)
         CalcRecips.process(self._mlist, msg, msgdata)
-        self.failUnless(msgdata.has_key('recips'))
+        self.assertTrue('recips' in msgdata)
         recips = msgdata['recips']
         recips.sort()
         self.assertEqual(recips, ['aperson@dom.ain', 'bperson@dom.ain'])
@@ -341,7 +340,7 @@ Urgent: xxXXxx
 
 """, Message.Message)
         CalcRecips.process(self._mlist, msg, msgdata)
-        self.failUnless(msgdata.has_key('recips'))
+        self.assertTrue('recips' in msgdata)
         recips = msgdata['recips']
         recips.sort()
         self.assertEqual(recips, ['aperson@dom.ain', 'bperson@dom.ain',
@@ -358,7 +357,7 @@ Urgent: xxXXxx
 
 """, Message.Message)
         CalcRecips.process(self._mlist, msg, msgdata)
-        self.failUnless(msgdata.has_key('recips'))
+        self.assertTrue('recips' in msgdata)
         recips = msgdata['recips']
         recips.sort()
         self.assertEqual(recips, ['aperson@dom.ain', 'bperson@dom.ain',
@@ -585,7 +584,7 @@ Subject: Re: [XTEST] About Mailman...
 """, Message.Message)
         CookHeaders.process(self._mlist, msg, {})
         # prefixing depends on mm_cfg.py
-        self.failUnless(str(msg['subject']) == 'Re: [XTEST] About Mailman...' or
+        self.assertTrue(str(msg['subject']) == 'Re: [XTEST] About Mailman...' or
                         str(msg['subject']) == '[XTEST] Re: About Mailman...')
 
     def test_reply_to_list(self):
@@ -854,7 +853,7 @@ From: aperson@dom.ain
 
 """, Message.Message)
         CookHeaders.process(self._mlist, msg, {})
-        eq(unicode(msg['list-id']), 'A Test List <_xtest.dom.ain>')
+        eq(str(msg['list-id']), 'A Test List <_xtest.dom.ain>')
         eq(msg['list-help'], '<mailto:_xtest-request@dom.ain?subject=help>')
         eq(msg['list-unsubscribe'],
            '<http://www.dom.ain/mailman/options/_xtest>,'
@@ -1059,18 +1058,18 @@ To: yall@dom.ain
         file = os.path.join(self._mlist.fullpath(), 'members.txt')
         addrs = ['aperson@dom.ain', 'bperson@dom.ain',
                  'cperson@dom.ain', 'dperson@dom.ain']
-        fp = open(file, 'w')
+        fp = open(file, 'wb')
         try:
             for addr in addrs:
-                print >> fp, addr
+                fp.write(addr.encode())
             fp.close()
             FileRecips.process(self._mlist, msg, msgdata)
             self.assertEqual(msgdata.get('recips'), addrs)
         finally:
             try:
                 os.unlink(file)
-            except OSError, e:
-                if e.errno <> e.ENOENT: raise
+            except OSError as e:
+                if e.errno != e.ENOENT: raise
 
     def test_file_exists_no_member(self):
         msg = email.message_from_string("""\
@@ -1082,18 +1081,18 @@ To: yall@dom.ain
         file = os.path.join(self._mlist.fullpath(), 'members.txt')
         addrs = ['aperson@dom.ain', 'bperson@dom.ain',
                  'cperson@dom.ain', 'dperson@dom.ain']
-        fp = open(file, 'w')
+        fp = open(file, 'wb')
         try:
             for addr in addrs:
-                print >> fp, addr
+                fp.write(addr.encode())
             fp.close()
             FileRecips.process(self._mlist, msg, msgdata)
             self.assertEqual(msgdata.get('recips'), addrs)
         finally:
             try:
                 os.unlink(file)
-            except OSError, e:
-                if e.errno <> e.ENOENT: raise
+            except OSError as e:
+                if e.errno != e.ENOENT: raise
 
     def test_file_exists_is_member(self):
         msg = email.message_from_string("""\
@@ -1105,10 +1104,10 @@ To: yall@dom.ain
         file = os.path.join(self._mlist.fullpath(), 'members.txt')
         addrs = ['aperson@dom.ain', 'bperson@dom.ain',
                  'cperson@dom.ain', 'dperson@dom.ain']
-        fp = open(file, 'w')
+        fp = open(file, 'wb')
         try:
             for addr in addrs:
-                print >> fp, addr
+                fp.write(addr.encode())
                 self._mlist.addNewMember(addr)
             fp.close()
             FileRecips.process(self._mlist, msg, msgdata)
@@ -1116,8 +1115,8 @@ To: yall@dom.ain
         finally:
             try:
                 os.unlink(file)
-            except OSError, e:
-                if e.errno <> e.ENOENT: raise
+            except OSError as e:
+                if e.errno != e.ENOENT: raise
 
 
 
@@ -1136,8 +1135,8 @@ class TestHold(TestBase):
         TestBase.tearDown(self)
         try:
             os.unlink(os.path.join(mm_cfg.DATA_DIR, 'pending.db'))
-        except OSError, e:
-            if e.errno <> errno.ENOENT: raise
+        except OSError as e:
+            if e.errno != errno.ENOENT: raise
         for f in [holdfile for holdfile in os.listdir(mm_cfg.DATA_DIR)
                   if holdfile.startswith('heldmsg-')]:
             os.unlink(os.path.join(mm_cfg.DATA_DIR, f))
@@ -1259,7 +1258,7 @@ From: aperson@dom.ain
             qfiles[to] = qmsg, qdata
         # BAW: We could be testing many other attributes of either the
         # messages or the metadata files...
-        keys = qfiles.keys()
+        keys = list(qfiles.keys())
         keys.sort()
         eq(keys, ['_xtest-owner@dom.ain', 'aperson@dom.ain'])
         # Get the pending cookie from the message to the sender
@@ -1271,7 +1270,7 @@ From: aperson@dom.ain
         data = self._mlist.pend_confirm(cookie)
         eq(data, ('H', 1))
         heldmsg = os.path.join(mm_cfg.DATA_DIR, 'heldmsg-_xtest-1.pck')
-        self.failUnless(os.path.exists(heldmsg))
+        self.assertTrue(os.path.exists(heldmsg))
         os.unlink(heldmsg)
         holdfiles = [f for f in os.listdir(mm_cfg.DATA_DIR)
                      if f.startswith('heldmsg-')]
@@ -2000,8 +1999,8 @@ Here is message %(i)d
     def tearDown(self):
         try:
             os.unlink(self._path)
-        except OSError, e:
-            if e.errno <> errno.ENOENT: raise
+        except OSError as e:
+            if e.errno != errno.ENOENT: raise
         for f in os.listdir(mm_cfg.VIRGINQUEUE_DIR):
             os.unlink(os.path.join(mm_cfg.VIRGINQUEUE_DIR, f))
         TestBase.tearDown(self)
@@ -2083,7 +2082,7 @@ It rocks!
         eq(len(files), 1)
         msg2, data = self._sb.dequeue(files[0])
         eq(msg.as_string(unixfrom=0), msg2.as_string(unixfrom=0))
-        self.failUnless(len(data) >= 6 and len(data) <= 7)
+        self.assertTrue(len(data) >= 6 and len(data) <= 7)
         eq(data['foo'], 1)
         eq(data['bar'], 2)
         eq(data['version'], 3)

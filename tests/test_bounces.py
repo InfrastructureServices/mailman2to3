@@ -189,9 +189,9 @@ class BounceTest(unittest.TestCase):
         for modname, file, addrs in self.DATA:
             module = 'Mailman.Bouncers.' + modname
             __import__(module)
-            fp = open(os.path.join('tests', 'bounces', file))
+            fp = open(os.path.join('tests', 'bounces', file), 'rb')
             try:
-                msg = email.message_from_file(fp)
+                msg = email.message_from_binary_file(fp)
             finally:
                 fp.close()
             foundaddrs = sys.modules[module].process(msg)
@@ -204,7 +204,7 @@ class BounceTest(unittest.TestCase):
                 foundaddrs = [found.strip() for found in foundaddrs]
                 addrs.sort()
                 foundaddrs.sort()
-            self.assertEqual(addrs, foundaddrs)
+            self.assertEqual(addrs, foundaddrs, msg="Module: " + module + ": " + str(addrs) + "!=" + str(foundaddrs))
 
     def test_SMTP32_failure(self):
         from Mailman.Bouncers import SMTP32
@@ -214,8 +214,8 @@ class BounceTest(unittest.TestCase):
             msg = email.message_from_file(fp)
         finally:
             fp.close()
-        self.failIf(msg['x-mailer'] is not None)
-        self.failIf(SMTP32.process(msg))
+        self.assertFalse(msg['x-mailer'] is not None)
+        self.assertFalse(SMTP32.process(msg))
 
     def test_caiwireless(self):
         from Mailman.Bouncers import Caiwireless

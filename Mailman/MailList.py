@@ -33,13 +33,13 @@ import urllib.request, urllib.parse, urllib.error
 import pickle
 
 from io import StringIO
-from UserDict import UserDict
+from collections import UserDict
 from urllib.parse import urlparse
-from types import *
+from types import MethodType
 
-import email.Iterators
-from email.Utils import getaddresses, formataddr, parseaddr
-from email.Header import Header
+import email.iterators
+from email.utils import getaddresses, formataddr, parseaddr
+from email.header import Header
 
 from Mailman import mm_cfg
 from Mailman import Utils
@@ -78,11 +78,6 @@ def D_(s):
 EMPTYSTRING = ''
 OR = '|'
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 
@@ -275,13 +270,11 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
                 ccset = i18n.get_translation().charset() or 'us-ascii'
         else:
             ccset = cset
-        if isinstance(self.description, str):
+        if isinstance(self.description, (bytes, bytearray)):
             return self.description.encode(ccset, errors)
         if mcset == ccset:
             return self.description
-        return Utils.xml_to_unicode(self.description, mcset).encode(ccset,
-                                                                    errors)
-
+        return Utils.xml_to_unicode(self.description, mcset)
 
 
     #
@@ -565,7 +558,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         fname_last = fname + '.last'
         fp = None
         try:
-            fp = open(fname_tmp, 'w')
+            fp = open(fname_tmp, 'wb')
             # Use a binary format... it's more efficient.
             pickle.dump(dict, fp, 1)
             fp.flush()
@@ -625,7 +618,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         # extension, but we always save it using pickle (since only it, and
         # not marshal is guaranteed to be compatible across Python versions).
         #
-        # On success return a 2-tuple of (dictionary, None).  On error, return
+        # On success return a 2-tuple of (dctionary, None).  On error, return
         # a 2-tuple of the form (None, errorobj).
         if dbfile.endswith('.db') or dbfile.endswith('.db.last'):
             loadfunc = marshal.load
@@ -652,7 +645,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
             if mtime < self.__timestamp:
                 # File is not newer
                 return None, None
-            fp = open(dbfile)
+            fp = open(dbfile, "rb")
         except EnvironmentError as e:
             if e.errno != errno.ENOENT: raise
             # The file doesn't exist yet
@@ -660,9 +653,9 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         now = int(time.time())
         try:
             try:
-                dict = loadfunc(fp)
-                if type(dict) != DictType:
-                    return None, 'Load() expected to return a dictionary'
+                dct = loadfunc(fp)
+                if not isinstance(dct, dict):
+                    return None, 'Load() expected to return a dctionary'
             except (EOFError, ValueError, TypeError, MemoryError,
                     pickle.PicklingError, pickle.UnpicklingError) as e:
                 return None, e
@@ -672,7 +665,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         # so the test above might succeed the next time.  And we get the time
         # before unpickling in case it takes more than a second.  (LP: #266464)
         self.__timestamp = now
-        return dict, None
+        return dct, None
 
     def Load(self, check_version=True):
         if not Utils.list_exists(self.internal_name()):
@@ -689,8 +682,8 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
         dfile = os.path.join(self.fullpath(), 'config.db')
         dlast = dfile + '.last'
         for file in (pfile, plast, dfile, dlast):
-            dict, e = self.__load(file)
-            if dict is None:
+            dct, e = self.__load(file)
+            if dct is None:
                 if e is not None:
                     # Had problems with this file; log it and try the next one.
                     syslog('error', "couldn't load config file %s\n%s",
@@ -721,11 +714,11 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
             finally:
                 if unlock:
                     self.__lock.unlock()
-        # Copy the loaded dictionary into the attributes of the current
+        # Copy the loaded dctionary into the attributes of the current
         # mailing list object, then run sanity check on the data.
-        self.__dict__.update(dict)
+        self.__dict__.update(dct)
         if check_version:
-            self.CheckVersion(dict)
+            self.CheckVersion(dct)
             self.CheckValues()
 
     def __fix_corrupt_pckfile(self, file, pfile, plast, dfile, dlast):
@@ -1099,7 +1092,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
                 subject = _('%(realname)s subscription notification')
             finally:
                 i18n.set_translation(otrans)
-            if isinstance(name, UnicodeType):
+            if isinstance(name, (bytes, bytearray)):
                 name = name.encode(Utils.GetCharSet(lang), 'replace')
             text = Utils.maketext(
                 "adminsubscribeack.txt",
@@ -1305,7 +1298,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
             name = self.getMemberName(newaddr)
             if name is None:
                 name = ''
-            if isinstance(name, UnicodeType):
+            if isinstance(name, (bytes, bytearray)):
                 name = name.encode(Utils.GetCharSet(lang), 'replace')
             text = Utils.maketext(
                 'adminaddrchgack.txt',
@@ -1404,7 +1397,7 @@ class MailList(HTMLFormatter, Deliverer, ListAdmin,
                 approved = context.get('Approved', context.get('Approve'))
                 if not approved:
                     try:
-                        subpart = list(email.Iterators.typed_subpart_iterator(
+                        subpart = list(email.iterators.typed_subpart_iterator(
                             context, 'text', 'plain'))[0]
                     except IndexError:
                         subpart = None

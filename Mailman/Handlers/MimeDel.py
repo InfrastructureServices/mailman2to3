@@ -29,7 +29,7 @@ import errno
 import tempfile
 from os.path import splitext
 
-from email.Iterators import typed_subpart_iterator
+from email.iterators import typed_subpart_iterator
 
 from Mailman import mm_cfg
 from Mailman import Errors
@@ -232,7 +232,7 @@ def to_plaintext(msg):
     changedp = 0
     for subpart in typed_subpart_iterator(msg, 'text', 'html'):
         filename = tempfile.mktemp('.html')
-        fp = open(filename, 'w')
+        fp = open(filename, 'wb')
         try:
             fp.write(subpart.get_payload(decode=1))
             fp.close()

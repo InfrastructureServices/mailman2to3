@@ -20,7 +20,6 @@
 import sys
 import os
 import codecs
-from types import StringType
 
 from Mailman import mm_cfg
 from Mailman.Logging.Utils import _logexc
@@ -85,8 +84,8 @@ class Logger:
             f.flush()
 
     def write(self, msg):
-        if isinstance(msg, StringType):
-            msg = str(msg, self.__encoding, 'replace')
+        if not isinstance(msg, str):
+            msg.decode(self.__encoding, 'replace')
         f = self.__get_f()
         try:
             f.write(msg)

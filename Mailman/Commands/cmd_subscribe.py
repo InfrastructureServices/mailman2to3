@@ -27,8 +27,8 @@
         around the email address, and no quotes!)
 """
 
-from email.Utils import parseaddr
-from email.Header import decode_header, make_header
+from email.utils import parseaddr
+from email.header import decode_header, make_header
 
 from Mailman import Utils
 from Mailman import Errors
@@ -95,7 +95,7 @@ def process(res, args):
         try:
             h = make_header(decode_header(realname))
             # BAW: in Python 2.2, use just unicode(h)
-            realname = h.__unicode__()
+            realname = str(h)
         except UnicodeError:
             realname = ''
         # Coerce to byte string if uh contains only ascii

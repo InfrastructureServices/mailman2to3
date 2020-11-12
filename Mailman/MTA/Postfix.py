@@ -39,11 +39,6 @@ VIRTFILE = os.path.join(mm_cfg.CONFIG_DIR, 'virtual-mailman')
 # and check_perms.
 targetmode = S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 
@@ -98,7 +93,7 @@ def _zapfile(filename):
     # Truncate the file w/o messing with the file permissions, but only if it
     # already exists.
     if os.path.exists(filename):
-        fp = open(filename, 'w')
+        fp = open(filename, 'wb')
         fp.close()
 
 
@@ -241,7 +236,7 @@ def _check_for_virtual_loopaddr(mlist, filename):
     infp = open(filename)
     omask = os.umask(0o07)
     try:
-        outfp = open(filename + '.tmp', 'w')
+        outfp = open(filename + '.tmp', 'wb')
     finally:
         os.umask(omask)
     try:
@@ -360,7 +355,7 @@ def _do_remove(mlist, textfile, virtualp):
     try:
         omask = os.umask(0o07)
         try:
-            outfp = open(textfile + '.tmp', 'w')
+            outfp = open(textfile + '.tmp', 'wb')
         finally:
             os.umask(omask)
         filteroutp = False
@@ -391,7 +386,7 @@ def _do_remove(mlist, textfile, virtualp):
                     # Filter out this stanza
                     filteroutp = True
                 else:
-                    outfp.write(line)
+                    outfp.write(line.encode())
     # Close up shop, and rotate the files
     finally:
         infp.close()

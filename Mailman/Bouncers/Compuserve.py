@@ -30,7 +30,7 @@ def process(msg):
     #    1 = intro line seen
     state = 0
     addrs = []
-    for line in email.Iterators.body_line_iterator(msg):
+    for line in email.iterators.body_line_iterator(msg):
         if state == 0:
             mo = dcre.search(line)
             if mo:

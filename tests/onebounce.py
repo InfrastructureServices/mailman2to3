@@ -1,4 +1,4 @@
-#! /usr/bin/python2
+#! /usr/bin/python3
 
 # Copyright (C) 2002-2018 by the Free Software Foundation, Inc.
 #
@@ -46,9 +46,9 @@ COMMASPACE = ', '
 
 
 def usage(code, msg=''):
-    print __doc__ % globals()
+    print(__doc__ % globals())
     if msg:
-        print msg
+        print(msg)
     sys.exit(code)
 
 
@@ -57,7 +57,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hva',
                                    ['help', 'verbose', 'all'])
-    except getopt.error, msg:
+    except getopt.error as msg:
         usage(1, msg)
 
     all = verbose = 0
@@ -78,15 +78,15 @@ def main():
             __import__(modname)
             addrs = sys.modules[modname].process(msg)
             if addrs is BouncerAPI.Stop:
-                print module, 'got a Stop'
+                print(module, 'got a Stop')
                 if not all:
                     break
                 continue
             if not addrs:
                 if verbose:
-                    print module, 'found no matches'
+                    print(module, 'found no matches')
             else:
-                print module, 'found', COMMASPACE.join(addrs)
+                print(module, 'found', COMMASPACE.join(addrs))
                 if not all:
                     break
 

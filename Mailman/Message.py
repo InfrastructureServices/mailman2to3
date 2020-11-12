@@ -17,7 +17,7 @@
 
 """Standard Mailman message object.
 
-This is a subclass of email.Message but provides a slightly extended interface
+This is a subclass of email.message but provides a slightly extended interface
 which is more convenient for use inside Mailman.
 """
 
@@ -25,32 +25,34 @@ import re
 from io import StringIO
 
 import email
-import email.Generator
-import email.Message
-import email.Utils
-from email.Charset import Charset
-from email.Header import Header
-
-from types import ListType, StringType
+import email.generator
+import email.message
+import email.utils
+from email.charset import Charset
+from email.header import Header
 
 from Mailman import mm_cfg
 from Mailman import Utils
 
 COMMASPACE = ', '
 
-mo = re.match(r'([\d.]+)', email.__version__)
-VERSION = tuple([int(s) for s in mo.group().split('.')])
+try:
+    mo = re.match(r'([\d.]+)', email.__version__)
+    VERSION = tuple([int(s) for s in mo.group().split('.')])
+except AttributeError:
+    ## We use system wide email package and assume it's newer than 3.0
+    VERSION = (3,0,0)
 
 
 
-class Generator(email.Generator.Generator):
+class Generator(email.generator.Generator):
     """Generates output from a Message object tree, keeping signatures.
 
        Headers will by default _not_ be folded in attachments.
     """
     def __init__(self, outfp, mangle_from_=True,
                  maxheaderlen=78, children_maxheaderlen=0):
-        email.Generator.Generator.__init__(self, outfp,
+        email.generator.Generator.__init__(self, outfp,
                 mangle_from_=mangle_from_, maxheaderlen=maxheaderlen)
         self.__children_maxheaderlen = children_maxheaderlen
 
@@ -61,11 +63,11 @@ class Generator(email.Generator.Generator):
 
 
 
-class Message(email.Message.Message):
+class Message(email.message.Message):
     def __init__(self):
         # We need a version number so that we can optimize __setstate__()
         self.__version__ = VERSION
-        email.Message.Message.__init__(self)
+        email.message.Message.__init__(self)
 
     # BAW: For debugging w/ bin/dumpdb.  Apparently pprint uses repr.
     def __repr__(self):
@@ -100,7 +102,7 @@ class Message(email.Message.Message):
                 chunks = []
                 cchanged = 0
                 for s, charset in v._chunks:
-                    if isinstance(charset, StringType):
+                    if isinstance(charset, str):
                         charset = Charset(charset)
                         cchanged = 1
                     chunks.append((s, charset))
@@ -154,7 +156,7 @@ class Message(email.Message.Message):
             # decoded before parsing since the decoded header may contain
             # an unquoted comma or other delimiter in a real name.
             fieldval = ''.join(fieldval.splitlines())
-            addrs = email.Utils.getaddresses([fieldval])
+            addrs = email.utils.getaddresses([fieldval])
             try:
                 realname, address = addrs[0]
             except IndexError:
@@ -211,7 +213,7 @@ class Message(email.Message.Message):
                     # getaddresses() and multi-line headers
                     fieldvals = [''.join(fv.splitlines())
                                  for fv in fieldvals]
-                    pairs.extend(email.Utils.getaddresses(fieldvals))
+                    pairs.extend(email.utils.getaddresses(fieldvals))
         authors = []
         for pair in pairs:
             address = pair[1]
@@ -225,7 +227,7 @@ class Message(email.Message.Message):
         Mailman to stop delivery in Scrubber.py (called from ToDigest.py).
         """
         try:
-            filename = email.Message.Message.get_filename(self, failobj)
+            filename = email.message.Message.get_filename(self, failobj)
             return filename
         except (UnicodeError, LookupError, ValueError):
             return failobj
@@ -235,8 +237,8 @@ class Message(email.Message.Message):
         """Return entire formatted message as a string using
         Mailman.Message.Generator.
 
-        Operates like email.Message.Message.as_string, only
-	using Mailman's Message.Generator class. Only the top headers will
+        Operates like email.message.Message.as_string, only
+        using Mailman's Message.Generator class. Only the top headers will
         get folded.
         """
         fp = StringIO()
@@ -261,7 +263,7 @@ class UserNotification(Message):
         self['Subject'] = Header(subject, charset, header_name='Subject',
                                  errors='replace')
         self['From'] = sender
-        if isinstance(recip, ListType):
+        if isinstance(recip, list):
             self['To'] = COMMASPACE.join(recip)
             self.recips = recip
         else:
@@ -280,7 +282,7 @@ class UserNotification(Message):
             self['Message-ID'] = Utils.unique_message_id(mlist)
         # Ditto for Date: which is required by RFC 2822
         if 'date' not in self:
-            self['Date'] = email.Utils.formatdate(localtime=1)
+            self['Date'] = email.utils.formatdate(localtime=1)
         # UserNotifications are typically for admin messages, and for messages
         # other than list explosions.  Send these out as Precedence: bulk, but
         # don't override an existing Precedence: header.

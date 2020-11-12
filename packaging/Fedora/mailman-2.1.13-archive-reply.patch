@@ -1,0 +1,21 @@
+diff -up mailman-2.1.13/templates/en/article.html.archive-reply mailman-2.1.13/templates/en/article.html
+--- mailman-2.1.13/templates/en/article.html.archive-reply	2009-12-22 19:00:43.000000000 +0100
++++ mailman-2.1.13/templates/en/article.html	2010-03-25 13:50:02.000000000 +0100
+@@ -4,7 +4,7 @@
+    <TITLE> %(title)s
+    </TITLE>
+    <LINK REL="Index" HREF="index.html" >
+-   <LINK REL="made" HREF="mailto:%(email_url)s?Subject=%(subject_url)s&In-Reply-To=%(in_reply_to_url)s">
++   <LINK REL="made" HREF="mailto:%(email_url)s?Subject=Re:%%20%(subject_url)s&In-Reply-To=%(in_reply_to_url)s">
+    <META NAME="robots" CONTENT="index,nofollow">
+    <style type="text/css">
+        pre {
+@@ -18,7 +18,7 @@
+  <BODY BGCOLOR="#ffffff">
+    <H1>%(subject_html)s</H1>
+     <B>%(author_html)s</B> 
+-    <A HREF="mailto:%(email_url)s?Subject=%(subject_url)s&In-Reply-To=%(in_reply_to_url)s"
++    <A HREF="mailto:%(email_url)s?Subject=Re:%%20%(subject_url)s&In-Reply-To=%(in_reply_to_url)s"
+        TITLE="%(subject_html)s">%(email_html)s
+        </A><BR>
+     <I>%(datestr_html)s</I>

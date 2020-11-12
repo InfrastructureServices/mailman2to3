@@ -7,7 +7,7 @@ import os
 import re
 import sys
 import time
-from email.Utils import parseaddr, parsedate_tz, mktime_tz, formatdate
+from email.utils import parseaddr, parsedate_tz, mktime_tz, formatdate
 import pickle as pickle
 from io import StringIO
 from string import lowercase
@@ -23,11 +23,6 @@ from Mailman.Logging.Syslog import syslog
 from Mailman.i18n import _, C_
 
 # True/False
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 SPACE = ' '
 
@@ -344,7 +339,7 @@ class T:
 
         omask = os.umask(0o07)
         try:
-            f = open(os.path.join(self.basedir, 'pipermail.pck'), 'w')
+            f = open(os.path.join(self.basedir, 'pipermail.pck'), 'wb')
         finally:
             os.umask(omask)
         pickle.dump(self.getstate(), f)
@@ -535,7 +530,7 @@ class T:
         path = os.path.join(arcdir, index_name + self.INDEX_EXT)
         omask = os.umask(0o02)
         try:
-            self.__f = open(path, 'w')
+            self.__f = open(path, 'wb')
         finally:
             os.umask(omask)
         self.__stdout = sys.stdout
@@ -697,7 +692,7 @@ class T:
     def write_article(self, index, article, path):
         omask = os.umask(0o02)
         try:
-            f = open(path, 'w')
+            f = open(path, 'wb')
         finally:
             os.umask(omask)
         temp_stdout, sys.stdout = sys.stdout, f

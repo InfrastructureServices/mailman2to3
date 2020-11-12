@@ -22,12 +22,11 @@ list configuration.
 
 
 import re
-from types import UnicodeType
 
-from email.Charset import Charset
-from email.Header import Header, decode_header, make_header
-from email.Utils import parseaddr, formataddr, getaddresses
-from email.Errors import HeaderParseError
+from email.charset import Charset
+from email.header import Header, decode_header, make_header
+from email.utils import parseaddr, formataddr, getaddresses
+from email.errors import HeaderParseError
 
 from Mailman import i18n
 from Mailman import mm_cfg
@@ -40,18 +39,11 @@ COMMASPACE = ', '
 MAXLINELEN = 78
 
 # True/False
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 
 def _isunicode(s):
-    return isinstance(s, UnicodeType)
-
-nonascii = re.compile('[^\s!-~]')
+    return isinstance(s, str)
 
 def uheader(mlist, s, header_name=None, continuation_ws=' ', maxlinelen=None):
     # Get the charset to encode the string in. Then search if there is any
@@ -59,13 +51,8 @@ def uheader(mlist, s, header_name=None, continuation_ws=' ', maxlinelen=None):
     # us-ascii then we use iso-8859-1 instead. If the string is ascii only
     # we use 'us-ascii' if another charset is specified.
     charset = Utils.GetCharSet(mlist.preferred_language)
-    if nonascii.search(s):
-        # use list charset but ...
-        if charset == 'us-ascii':
-            charset = 'iso-8859-1'
-    else:
-        # there is no nonascii so ...
-        charset = 'us-ascii'
+    if charset == 'us-ascii':
+        charset = 'iso-8859-1'
     try:
         return Header(s, charset, maxlinelen, header_name, continuation_ws)
     except UnicodeError:
@@ -155,21 +142,11 @@ def process(mlist, msg, msgdata):
                 realname = email
         # Remove domain from realname if it looks like an email address
         realname = re.sub(r'@([^ .]+\.)+[^ .]+$', '---', realname)
-        # Make a display name and RFC 2047 encode it if necessary.  This is
-        # difficult and kludgy. If the realname came from From: it should be
-        # ascii or RFC 2047 encoded. If it came from the list, it should be
-        # in the charset of the list's preferred language or possibly unicode.
-        # if it's from the email address, it should be ascii. In any case,
-        # make it a unicode.
-        if isinstance(realname, str):
-            urn = realname
-        else:
-            rn, cs = ch_oneline(realname)
-            urn = str(rn, cs, errors='replace')
+        urn = realname
         # likewise, the list's real_name which should be ascii, but use the
         # charset of the list's preferred_language which should be a superset.
         lcs = Utils.GetCharSet(mlist.preferred_language)
-        ulrn = str(mlist.real_name, lcs, errors='replace')
+        ulrn = mlist.real_name
         # get translated 'via' with dummy replacements
         realname = '%(realname)s'
         lrn = '%(lrn)s'
@@ -179,7 +156,7 @@ def process(mlist, msg, msgdata):
         i18n.set_language(mlist.preferred_language)
         via = _('%(realname)s via %(lrn)s')
         i18n.set_translation(otrans)
-        uvia = str(via, lcs, errors='replace')
+        uvia = via
         # Replace the dummy replacements.
         uvia = re.sub('%\(lrn\)s', ulrn, re.sub('%\(realname\)s', urn, uvia))
         # And get an RFC 2047 encoded header string.
@@ -385,17 +362,8 @@ def prefix_subject(mlist, msg, msgdata):
     if len(lines) > 1 and lines[1] and lines[1][0] in ' \t':
         ws = lines[1][0]
     msgdata['origsubj'] = subject
-    # The subject may be multilingual but we take the first charset as major
-    # one and try to decode.  If it is decodable, returned subject is in one
-    # line and cset is properly set.  If fail, subject is mime-encoded and
-    # cset is set as us-ascii.  See detail for ch_oneline() (CookHeaders one
-    # line function).
     subject, cset = ch_oneline(subject)
-    # TK: Python interpreter has evolved to be strict on ascii charset code
-    # range.  It is safe to use unicode string when manupilating header
-    # contents with re module.  It would be best to return unicode in
-    # ch_oneline() but here is temporary solution.
-    subject = str(subject, cset)
+
     # If the subject_prefix contains '%d', it is replaced with the
     # mailing list sequential number.  Sequential number format allows
     # '%d' or '%05d' like pattern.
@@ -435,7 +403,6 @@ def prefix_subject(mlist, msg, msgdata):
         subject = _('(no subject)')
         i18n.set_translation(otrans)
         cset = Utils.GetCharSet(mlist.preferred_language)
-        subject = str(subject, cset)
     # and substitute %d in prefix with post_id
     try:
         prefix = prefix % mlist.post_id
@@ -475,7 +442,6 @@ def prefix_subject(mlist, msg, msgdata):
         h = uheader(mlist, prefix, 'Subject', continuation_ws=ws)
         h.append(recolon)
     # TK: Subject is concatenated and unicode string.
-    subject = subject.encode(cset, 'replace')
     h.append(subject, cset)
     change_header('Subject', h, mlist, msg, msgdata)
     ss = uheader(mlist, recolon, 'Subject', continuation_ws=ws)
@@ -501,9 +467,9 @@ def ch_oneline(headerstr):
                 cset = x[1]
                 break
         h = make_header(d)
-        ustr = h.__unicode__()
+        ustr = str(h)
         oneline = ''.join(ustr.splitlines())
-        return oneline.encode(cset, 'replace'), cset
+        return oneline, cset
     except (LookupError, UnicodeError, ValueError, HeaderParseError):
         # possibly charset problem. return with undecoded string in one line.
         return ''.join(headerstr.splitlines()), 'us-ascii'

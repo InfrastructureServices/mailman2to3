@@ -30,17 +30,16 @@ import re
 import copy
 import time
 import traceback
-from types import ListType
 from io import StringIO
 
-from email.Parser import Parser
-from email.Generator import Generator
-from email.MIMEBase import MIMEBase
-from email.MIMEText import MIMEText
-from email.MIMEMessage import MIMEMessage
-from email.Utils import getaddresses, formatdate
-from email.Header import decode_header, make_header, Header
-from email.Charset import Charset
+from email.parser import Parser
+from email.generator import Generator
+from email.mime import base
+from email.mime import text
+from email.mime import message
+from email.utils import getaddresses, formatdate
+from email.header import decode_header, make_header, Header
+from email.charset import Charset
 
 from Mailman import mm_cfg
 from Mailman import Utils
@@ -60,18 +59,13 @@ _ = i18n._
 UEMPTYSTRING = ''
 EMPTYSTRING = ''
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 
 def to_cset_out(text, lcset):
     # Convert text from unicode or lcset to output cset.
     ocset = Charset(lcset).get_output_charset() or lcset
-    if isinstance(text, str):
+    if isinstance(text, (bytes, bytearray)):
         return text.encode(ocset, 'replace')
     else:
         return text.decode(lcset, 'replace').encode(ocset, 'replace')
@@ -84,38 +78,36 @@ def process(mlist, msg, msgdata):
         return
     mboxfile = os.path.join(mlist.fullpath(), 'digest.mbox')
     omask = os.umask(0o07)
-    try:
-        mboxfp = open(mboxfile, 'a+')
-    finally:
-        os.umask(omask)
-    mbox = Mailbox(mboxfp)
+    mbox = Mailbox(mboxfile)
     mbox.AppendMessage(msg)
     # Calculate the current size of the accumulation file.  This will not tell
     # us exactly how big the MIME, rfc1153, or any other generated digest
     # message will be, but it's the most easily available metric to decide
     # whether the size threshold has been reached.
-    mboxfp.flush()
+    mbox.flush()
+    mbox.close()
     size = os.path.getsize(mboxfile)
-    if (mlist.digest_size_threshhold > 0 and
-        size / 1024.0 >= mlist.digest_size_threshhold):
-        # This is a bit of a kludge to get the mbox file moved to the digest
-        # queue directory.
-        try:
-            # Enclose in try/except here because a error in send_digest() can
-            # silently stop regular delivery.  Unsuccessful digest delivery
-            # should be tried again by cron and the site administrator will be
-            # notified of any error explicitly by the cron error message.
-            mboxfp.seek(0)
-            send_digests(mlist, mboxfp)
-            os.unlink(mboxfile)
-        except Exception as errmsg:
-            # Bare except is generally prohibited in Mailman, but we can't
-            # forecast what exceptions can occur here.
-            syslog('error', 'send_digests() failed: %s', errmsg)
-            s = StringIO()
-            traceback.print_exc(file=s)
-            syslog('error', s.getvalue())
-    mboxfp.close()
+    ## FIXME leftovers from py2
+    with open(mboxfile, 'r') as mboxfp:
+        if (mlist.digest_size_threshhold > 0 and
+            size / 1024.0 >= mlist.digest_size_threshhold):
+            # This is a bit of a kludge to get the mbox file moved to the digest
+            # queue directory.
+            try:
+                # Enclose in try/except here because a error in send_digest() can
+                # silently stop regular delivery.  Unsuccessful digest delivery
+                # should be tried again by cron and the site administrator will be
+                # notified of any error explicitly by the cron error message.
+                mboxfp.seek(0)
+                send_digests(mlist, mboxfp)
+                os.unlink(mboxfile)
+            except Exception as errmsg:
+                # Bare except is generally prohibited in Mailman, but we can't
+                # forecast what exceptions can occur here.
+                syslog('error', 'send_digests() failed: %s', errmsg)
+                s = StringIO()
+                traceback.print_exc(file=s)
+                syslog('error', s.getvalue())
 
 
 
@@ -208,7 +200,7 @@ def send_i18n_digests(mlist, mboxfp):
          'got_owner_email':   mlist.GetOwnerEmail(),
          }, mlist=mlist)
     # MIME
-    masthead = MIMEText(mastheadtxt, _charset=lcset)
+    masthead = text.MIMEText(mastheadtxt, _charset=lcset)
     masthead['Content-Description'] = digestid
     mimemsg.attach(masthead)
     # RFC 1153
@@ -218,7 +210,7 @@ def send_i18n_digests(mlist, mboxfp):
     if re.sub('\s', '', mlist.digest_header):
         headertxt = decorate(mlist, mlist.digest_header, _('digest header'))
         # MIME
-        header = MIMEText(headertxt, _charset=lcset)
+        header = text.MIMEText(headertxt, _charset=lcset)
         header['Content-Description'] = _('Digest Header')
         mimemsg.attach(header)
         # RFC 1153
@@ -257,7 +249,7 @@ def send_i18n_digests(mlist, mboxfp):
         username = ''
         addresses = getaddresses([Utils.oneline(msg.get('from', ''), lcset)])
         # Take only the first author we find
-        if isinstance(addresses, ListType) and addresses:
+        if isinstance(addresses, list) and addresses:
             username = addresses[0][0]
             if not username:
                 username = addresses[0][1]
@@ -311,7 +303,7 @@ def send_i18n_digests(mlist, mboxfp):
         return
     toctext = to_cset_out(toc.getvalue(), lcset)
     # MIME
-    tocpart = MIMEText(toctext, _charset=lcset)
+    tocpart = text.MIMEText(toctext, _charset=lcset)
     tocpart['Content-Description']= _("Today's Topics (%(msgcount)d messages)")
     mimemsg.attach(tocpart)
     # RFC 1153
@@ -321,13 +313,13 @@ def send_i18n_digests(mlist, mboxfp):
     print(separator70, file=plainmsg)
     print(file=plainmsg)
     # Now go through and add each message
-    mimedigest = MIMEBase('multipart', 'digest')
+    mimedigest = base.MIMEBase('multipart', 'digest')
     mimemsg.attach(mimedigest)
     first = True
     for msg in messages:
         # MIME.  Make a copy of the message object since the rfc1153
         # processing scrubs out attachments.
-        mimedigest.attach(MIMEMessage(copy.deepcopy(msg)))
+        mimedigest.attach(message.MIMEMessage(copy.deepcopy(msg)))
         # rfc1153
         if first:
             first = False
@@ -368,7 +360,7 @@ def send_i18n_digests(mlist, mboxfp):
     if re.sub('\s', '', mlist.digest_footer):
         footertxt = decorate(mlist, mlist.digest_footer, _('digest footer'))
         # MIME
-        footer = MIMEText(footertxt, _charset=lcset)
+        footer = text.MIMEText(footertxt, _charset=lcset)
         footer['Content-Description'] = _('Digest Footer')
         mimemsg.attach(footer)
         # RFC 1153

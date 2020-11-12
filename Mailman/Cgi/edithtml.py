@@ -235,7 +235,7 @@ must have shell access to your Mailman server.
             if e.errno != errno.EEXIST: raise
     finally:
         os.umask(omask)
-    fp = open(os.path.join(langdir, template_name), 'w')
+    fp = open(os.path.join(langdir, template_name), 'wb')
     try:
         fp.write(code)
     finally:

@@ -22,9 +22,9 @@ import re
 import time
 import pickle
 
-from email.MIMEText import MIMEText
-from email.MIMEMessage import MIMEMessage
-from email.Utils import parseaddr
+from email.mime import text
+from email.mime import message
+from email.utils import parseaddr
 
 from Mailman import mm_cfg
 from Mailman import Utils
@@ -40,11 +40,6 @@ from Mailman.i18n import _
 
 COMMASPACE = ', '
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 

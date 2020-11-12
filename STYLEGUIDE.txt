@@ -23,7 +23,6 @@ That said, here's a quick outline of where my preferences depart from Guido's:
 - Imports usually should be on separate lines.  While it's sometimes
   okay to say
 
-    from types import StringType, ListType
 
   it's never okay to say
 

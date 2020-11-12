@@ -53,8 +53,8 @@ import os
 import re
 import errno
 
-from email.Parser import Parser
-from email.Utils import parseaddr
+from email.parser import Parser
+from email.utils import parseaddr
 
 from Mailman import mm_cfg
 from Mailman import Utils

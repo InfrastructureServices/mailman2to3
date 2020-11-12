@@ -48,7 +48,7 @@ def process(mlist, msg, msgdata):
     realname = mlist.real_name
     text = Utils.maketext(
         'postack.txt',
-        {'subject'     : Utils.oneline(origsubj, Utils.GetCharSet(lang)),
+        {'subject'     : origsubj,
          'listname'    : realname,
          'listinfo_url': mlist.GetScriptURL('listinfo', absolute=1),
          'optionsurl'  : mlist.GetOptionsURL(sender, absolute=1),

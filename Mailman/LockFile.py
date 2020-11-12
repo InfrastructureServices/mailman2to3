@@ -71,11 +71,6 @@ DEFAULT_LOCK_LIFETIME  = 15
 # Allowable a bit of clock skew
 CLOCK_SLOP = 10
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 
@@ -195,7 +190,7 @@ class LockFile:
         self.__logprefix = os.path.split(self.__lockfile)[1]
         # For transferring ownership across a fork.
         self.__owned = True
-	
+        
     def __repr__(self):
         return '<LockFile %s: %s [%s: %ssec] pid=%s>' % (
             id(self), self.__lockfile,

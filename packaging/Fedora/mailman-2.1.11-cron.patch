@@ -1,0 +1,142 @@
+diff --git a/cron/crontab.in.in b/cron/crontab.in.in
+index 540dfc1..45c5022 100644
+--- a/cron/crontab.in.in
++++ b/cron/crontab.in.in
+@@ -1,27 +1,50 @@
++#
++# -- WARNING -- WARNING -- WARNING -- WARNING -- WARNING -- WARNING -- 
++# ------------------  EDIT THE CORRECT FILE  -------------------------
++# 
++# This file is copied to /etc/cron.d/mailman from
++# @prefix@/cron/crontab.in when the mailman service is started via its
++# init.d script and the file /etc/cron.d/mailman is removed when the
++# service is stopped.  Therefore any edits made directly to
++# /etc/cron.d/mailman will be lost anytime the mailman service
++# restarts.
++#
++# To make changes edit the master copy @prefix@/cron/crontab.in and then
++# restart the service to pick up the changes (/sbin/service mailman restart).
++#
++# The reason this is done this way is because the mailman cron jobs
++# should only be invoked if the mailman service is enabled and not
++# just as a consequence of installing the rpm as was the case
++# previously. The file /etc/cron.d/mailman cannot simply be linked to
++# the master copy in @prefix@/cron because for security reasons cron
++# will not process crontab files that are links or writeable by
++# anybody else but root, thus the file must be copied into /etc/cron.d
++# with the right ownership and permissions.
++#
+ # At 8AM every day, mail reminders to admins as to pending requests.
+ # They are less likely to ignore these reminders if they're mailed
+ # early in the morning, but of course, this is local time... ;)
+-0 8 * * * @PYTHON@ -S @prefix@/cron/checkdbs
++0 8 * * * @MAILMAN_USER@ @prefix@/cron/checkdbs
+ #
+ # At 9AM, send notifications to disabled members that are due to be
+ # reminded to re-enable their accounts.
+-0 9 * * * @PYTHON@ -S @prefix@/cron/disabled
++0 9 * * * @MAILMAN_USER@ @prefix@/cron/disabled
+ #
+ # Noon, mail digests for lists that do periodic as well as threshhold delivery.
+-0 12 * * * @PYTHON@ -S @prefix@/cron/senddigests
++0 12 * * * @MAILMAN_USER@ @prefix@/cron/senddigests
+ #
+ # 5 AM on the first of each month, mail out password reminders.
+-0 5 1 * * @PYTHON@ -S @prefix@/cron/mailpasswds
++0 5 1 * * @MAILMAN_USER@ @prefix@/cron/mailpasswds
+ #
+ # Every 5 mins, try to gate news to mail.  You can comment this one out
+ # if you don't want to allow gating, or don't have any going on right now,
+ # or want to exclusively use a callback strategy instead of polling.
+-0,5,10,15,20,25,30,35,40,45,50,55 * * * * @PYTHON@ -S @prefix@/cron/gate_news
++0,5,10,15,20,25,30,35,40,45,50,55 * * * * @MAILMAN_USER@ @prefix@/cron/gate_news
+ #
+ # At 3:27am every night, regenerate the gzip'd archive file.  Only
+ # turn this on if the internal archiver is used and
+ # GZIP_ARCHIVE_TXT_FILES is false in mm_cfg.py
+-27 3 * * * @PYTHON@ -S @prefix@/cron/nightly_gzip
++27 3 * * * @MAILMAN_USER@ @prefix@/cron/nightly_gzip
+ #
+ # At 4:30AM daily, cull old entries from the 'bad' and 'shunt' queues.
+-30 4 * * * @PYTHON@ -S @prefix@/cron/cull_bad_shunt
++30 4 * * * @MAILMAN_USER@ @prefix@/cron/cull_bad_shunt
+diff --git a/cron/bumpdigests b/cron/bumpdigests
+index da5597b..7be0d14 100755
+--- a/cron/bumpdigests
++++ b/cron/bumpdigests
+@@ -1,4 +1,4 @@
+-#! @PYTHON@
++#! @PYTHON@ -S
+ #
+ # Copyright (C) 1998-2018 by the Free Software Foundation, Inc.
+ #
+diff --git a/cron/checkdbs b/cron/checkdbs
+index 1a3b3cc..d6a521a 100755
+--- a/cron/checkdbs
++++ b/cron/checkdbs
+@@ -1,4 +1,4 @@
+-#! @PYTHON@
++#! @PYTHON@ -S
+ #
+ # Copyright (C) 1998-2018 by the Free Software Foundation, Inc.
+ #
+diff --git a/cron/cull_bad_shunt b/cron/cull_bad_shunt
+index eaef0a6..0eeb1fe 100755
+--- a/cron/cull_bad_shunt
++++ b/cron/cull_bad_shunt
+@@ -1,4 +1,4 @@
+-#! @PYTHON@
++#! @PYTHON@ -S
+ #
+ # Copyright (C) 2008-2018 by the Free Software Foundation, Inc.
+ #
+diff --git a/cron/disabled b/cron/disabled
+index ebd4027..f8a6441 100755
+--- a/cron/disabled
++++ b/cron/disabled
+@@ -1,4 +1,4 @@
+-#! @PYTHON@
++#! @PYTHON@ -S
+ #
+ # Copyright (C) 2001-2018 by the Free Software Foundation, Inc.
+ #
+diff --git a/cron/gate_news b/cron/gate_news
+index 22caea7..74dca5e 100755
+--- a/cron/gate_news
++++ b/cron/gate_news
+@@ -1,4 +1,4 @@
+-#! @PYTHON@
++#! @PYTHON@ -S
+ #
+ # Copyright (C) 1998-2018 by the Free Software Foundation, Inc.
+ #
+diff --git a/cron/mailpasswds b/cron/mailpasswds
+index 9738e23..9c9e8f2 100755
+--- a/cron/mailpasswds
++++ b/cron/mailpasswds
+@@ -1,4 +1,4 @@
+-#! @PYTHON@
++#! @PYTHON@ -S
+ #
+ # Copyright (C) 1998-2018 by the Free Software Foundation, Inc.
+ #
+diff --git a/cron/nightly_gzip b/cron/nightly_gzip
+index 9d4a07f..d94dcba 100755
+--- a/cron/nightly_gzip
++++ b/cron/nightly_gzip
+@@ -1,4 +1,4 @@
+-#! @PYTHON@
++#! @PYTHON@ -S
+ # 
+ # Copyright (C) 1998-2018 by the Free Software Foundation, Inc.
+ #
+diff --git a/cron/senddigests b/cron/senddigests
+index 24408df..dc4f369 100755
+--- a/cron/senddigests
++++ b/cron/senddigests
+@@ -1,4 +1,4 @@
+-#! @PYTHON@
++#! @PYTHON@ -S
+ #
+ # Copyright (C) 1998-2018 by the Free Software Foundation, Inc.
+ #

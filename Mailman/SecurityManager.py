@@ -54,7 +54,6 @@ import http.cookies
 import marshal
 import binascii
 import urllib.request, urllib.parse, urllib.error
-from types import StringType, TupleType
 from urllib.parse import urlparse
 
 try:
@@ -68,11 +67,6 @@ from Mailman import Errors
 from Mailman.Logging.Syslog import syslog
 from Mailman.Utils import md5_new, sha_new
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 
@@ -177,11 +171,11 @@ class SecurityManager:
                 key, secret = self.AuthContextInfo(ac)
                 if secret is None:
                     continue
-                sharesponse = sha_new(response).hexdigest()
+                sharesponse = sha_new(response.encode()).hexdigest()
                 upgrade = ok = False
                 if sharesponse == secret:
                     ok = True
-                elif md5_new(response).digest() == secret:
+                elif md5_new(response.encode()).digest() == secret:
                     ok = upgrade = True
                 elif cryptmatchp(response, secret):
                     ok = upgrade = True
@@ -202,12 +196,12 @@ class SecurityManager:
             elif ac == mm_cfg.AuthListModerator:
                 # The list moderator password must be sha'd
                 key, secret = self.AuthContextInfo(ac)
-                if secret and sha_new(response).hexdigest() == secret:
+                if secret and sha_new(response.encode()).hexdigest() == secret:
                     return ac
             elif ac == mm_cfg.AuthListPoster:
                 # The list poster password must be sha'd
                 key, secret = self.AuthContextInfo(ac)
-                if secret and sha_new(response).hexdigest() == secret:
+                if secret and sha_new(response.encode()).hexdigest() == secret:
                     return ac
             elif ac == mm_cfg.AuthUser:
                 if user is not None:
@@ -243,7 +237,7 @@ class SecurityManager:
 
     def MakeCookie(self, authcontext, user=None):
         key, secret = self.AuthContextInfo(authcontext, user)
-        if key is None or secret is None or not isinstance(secret, StringType):
+        if key is None or secret is None or not isinstance(secret, str):
             raise ValueError
         # Timestamp
         issued = int(time.time())
@@ -331,7 +325,7 @@ class SecurityManager:
             key, secret = self.AuthContextInfo(authcontext, user)
         except Errors.NotAMemberError:
             return False
-        if key not in c or not isinstance(secret, StringType):
+        if key not in c or not isinstance(secret, str):
             return False
         # Undo the encoding we performed in MakeCookie() above.  BAW: I
         # believe this is safe from exploit because marshal can't be forced to
@@ -356,7 +350,7 @@ class SecurityManager:
             return False
         # Calculate what the mac ought to be based on the cookie's timestamp
         # and the shared secret.
-        mac = sha_new(secret + repr(issued)).hexdigest()
+        mac = sha_new(secret.encode() + repr(issued)).hexdigest()
         if mac != received_mac:
             return False
         # Authenticated!

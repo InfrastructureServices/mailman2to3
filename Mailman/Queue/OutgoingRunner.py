@@ -38,11 +38,6 @@ from Mailman.Logging.Syslog import syslog
 # permanent failures.  It is a count of calls to _doperiodic()
 DEAL_WITH_PERMFAILURES_EVERY = 10
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 

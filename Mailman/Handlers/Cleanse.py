@@ -19,7 +19,7 @@
 
 import re
 
-from email.Utils import formataddr, getaddresses, parseaddr
+from email.utils import formataddr, getaddresses, parseaddr
 
 from Mailman import mm_cfg
 from Mailman.Utils import unique_message_id

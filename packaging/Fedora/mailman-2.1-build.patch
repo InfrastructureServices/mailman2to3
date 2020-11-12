@@ -1,0 +1,715 @@
+diff --git a/Mailman/Archiver/Makefile.in b/Mailman/Archiver/Makefile.in
+index 65e46cb..dc3a1c6 100644
+--- a/Mailman/Archiver/Makefile.in
++++ b/Mailman/Archiver/Makefile.in
+@@ -28,7 +28,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ 
+ DEFS=   	@DEFS@
+@@ -47,7 +46,7 @@ pipermail.py
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+@@ -63,8 +62,6 @@ install:
+ 	    $(INSTALL) -m $(FILEMODE) $(srcdir)/$$f $(DESTDIR)$(PACKAGEDIR); \
+ 	done
+ 
+-finish:
+-
+ clean:
+ 
+ distclean:
+diff --git a/Mailman/Bouncers/Makefile.in b/Mailman/Bouncers/Makefile.in
+index 8865a9f..8878cd9 100644
+--- a/Mailman/Bouncers/Makefile.in
++++ b/Mailman/Bouncers/Makefile.in
+@@ -28,7 +28,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ 
+ DEFS=   	@DEFS@
+@@ -45,7 +44,7 @@ MODULES=	*.py
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+@@ -61,8 +60,6 @@ install:
+ 	    $(INSTALL) -m $(FILEMODE) $(srcdir)/$$f $(DESTDIR)$(PACKAGEDIR); \
+ 	done
+ 
+-finish:
+-
+ clean:
+ 
+ distclean:
+diff --git a/Mailman/Cgi/Makefile.in b/Mailman/Cgi/Makefile.in
+index 47929e9..e20c07e 100644
+--- a/Mailman/Cgi/Makefile.in
++++ b/Mailman/Cgi/Makefile.in
+@@ -28,7 +28,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ 
+ DEFS=   	@DEFS@
+@@ -47,7 +46,7 @@ CGI_MODULES=	*.py
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+@@ -63,8 +62,6 @@ install:
+ 	    $(INSTALL) -m $(FILEMODE) $(srcdir)/$$f $(DESTDIR)$(CGIDIR); \
+         done
+ 
+-finish:
+-
+ clean:
+ 
+ distclean:
+diff --git a/Mailman/Commands/Makefile.in b/Mailman/Commands/Makefile.in
+index 645d78b..12bbc1b 100644
+--- a/Mailman/Commands/Makefile.in
++++ b/Mailman/Commands/Makefile.in
+@@ -28,7 +28,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ 
+ DEFS=   	@DEFS@
+@@ -45,7 +44,7 @@ MODULES=	*.py
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+@@ -61,8 +60,6 @@ install:
+ 	    $(INSTALL) -m $(FILEMODE) $(srcdir)/$$f $(DESTDIR)$(PACKAGEDIR); \
+ 	done
+ 
+-finish:
+-
+ clean:
+ 
+ distclean:
+diff --git a/Mailman/Gui/Makefile.in b/Mailman/Gui/Makefile.in
+index 000441e..9273b8a 100644
+--- a/Mailman/Gui/Makefile.in
++++ b/Mailman/Gui/Makefile.in
+@@ -28,7 +28,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ 
+ DEFS=   	@DEFS@
+@@ -45,7 +44,7 @@ MODULES=	*.py
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+@@ -61,8 +60,6 @@ install:
+ 	    $(INSTALL) -m $(FILEMODE) $(srcdir)/$$f $(DESTDIR)$(PACKAGEDIR); \
+ 	done
+ 
+-finish:
+-
+ clean:
+ 
+ distclean:
+diff --git a/Mailman/Handlers/Makefile.in b/Mailman/Handlers/Makefile.in
+index 71e5576..56ee2eb 100644
+--- a/Mailman/Handlers/Makefile.in
++++ b/Mailman/Handlers/Makefile.in
+@@ -28,7 +28,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ 
+ DEFS=   	@DEFS@
+@@ -45,7 +44,7 @@ MODULES=	*.py
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+@@ -61,8 +60,6 @@ install:
+ 	    $(INSTALL) -m $(FILEMODE) $(srcdir)/$$f $(DESTDIR)$(PACKAGEDIR); \
+ 	done
+ 
+-finish:
+-
+ clean:
+ 
+ distclean:
+diff --git a/Mailman/Logging/Makefile.in b/Mailman/Logging/Makefile.in
+index e185775..ad5c128 100644
+--- a/Mailman/Logging/Makefile.in
++++ b/Mailman/Logging/Makefile.in
+@@ -28,7 +28,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ 
+ DEFS=   	@DEFS@
+@@ -45,7 +44,7 @@ MODULES=	*.py
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+@@ -61,8 +60,6 @@ install:
+ 	    $(INSTALL) -m $(FILEMODE) $(srcdir)/$$f $(DESTDIR)$(PACKAGEDIR); \
+ 	done
+ 
+-finish:
+-
+ clean:
+ 
+ distclean:
+diff --git a/Mailman/MTA/Makefile.in b/Mailman/MTA/Makefile.in
+index 0338806..e1de296 100644
+--- a/Mailman/MTA/Makefile.in
++++ b/Mailman/MTA/Makefile.in
+@@ -28,7 +28,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ 
+ DEFS=   	@DEFS@
+@@ -45,7 +44,7 @@ MODULES=	*.py
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+@@ -61,8 +60,6 @@ install:
+ 	    $(INSTALL) -m $(FILEMODE) $(srcdir)/$$f $(DESTDIR)$(PACKAGEDIR); \
+ 	done
+ 
+-finish:
+-
+ clean:
+ 
+ distclean:
+diff --git a/Mailman/Makefile.in b/Mailman/Makefile.in
+index 93c7efd..45439f0 100644
+--- a/Mailman/Makefile.in
++++ b/Mailman/Makefile.in
+@@ -20,8 +20,6 @@
+ 
+ # Variables set by configure
+ 
+-VERSION=	@VERSION@
+-
+ VPATH=		@srcdir@
+ srcdir= 	@srcdir@
+ bindir= 	@bindir@
+@@ -30,7 +28,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ 
+ DEFS=   	@DEFS@
+@@ -48,7 +45,7 @@ SUBDIRS=	Cgi Logging Archiver Handlers Bouncers Queue MTA Gui Commands
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+@@ -79,12 +76,6 @@ install: install-here
+ 	    (cd $$d; $(MAKE) DESTDIR=$(DESTDIR) install); \
+ 	done
+ 
+-finish:
+-	@for d in $(SUBDIRS); \
+-	do \
+-	    (cd $$d; $(MAKE) DESTDIR=$(DESTDIR) finish); \
+-	done
+-
+ clean:
+ 	for d in $(SUBDIRS); \
+ 	do \
+diff --git a/Mailman/Queue/Makefile.in b/Mailman/Queue/Makefile.in
+index 179f3d9..e0e97ad 100644
+--- a/Mailman/Queue/Makefile.in
++++ b/Mailman/Queue/Makefile.in
+@@ -28,7 +28,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ 
+ DEFS=   	@DEFS@
+@@ -45,7 +44,7 @@ MODULES=	*.py
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+@@ -61,8 +60,6 @@ install:
+ 	    $(INSTALL) -m $(FILEMODE) $(srcdir)/$$f $(DESTDIR)$(PACKAGEDIR); \
+ 	done
+ 
+-finish:
+-
+ clean:
+ 
+ distclean:
+diff --git a/Makefile.in b/Makefile.in
+index 40e04f5..eb40844 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -61,11 +61,10 @@ SUBDIRS=	bin cron misc Mailman scripts src templates messages tests
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+-DIRSETGID=	chmod g+s
+ 
+ DATE = $(shell python -c 'import time; print time.strftime("%d-%b-%Y"),')
+ LANGPACK = README-I18N.en templates messages
+@@ -85,14 +84,24 @@ install: doinstall update
+ 
+ doinstall: $(SUBDIRS)
+ 	@echo "Creating architecture independent directories..."
++	dir=$(DESTDIR)$(prefix); \
++	if test ! -d $$dir; then \
++		echo "Creating directory hierarchy $$dir"; \
++		$(INSTALL) -d -m $(DIRMODE) $$dir; \
++	else true; \
++	fi;
++	dir=$(DESTDIR)$(var_prefix); \
++	if test ! -d $$dir; then \
++		echo "Creating directory hierarchy $$dir"; \
++		$(INSTALL) -d -m $(DIRMODE) $$dir; \
++	else true; \
++	fi;
+ 	@for d in $(VAR_DIRS); \
+ 	do \
+ 	    dir=$(DESTDIR)$(var_prefix)/$$d; \
+ 	    if test ! -d $$dir; then \
+ 		echo "Creating directory hierarchy $$dir"; \
+-		$(srcdir)/mkinstalldirs $$dir; \
+-		chmod $(DIRMODE) $$dir; \
+-		$(DIRSETGID) $$dir; \
++		$(INSTALL) -d -m $(DIRMODE) $$dir; \
+ 	    else true; \
+ 	    fi; \
+ 	done
+@@ -102,9 +111,7 @@ doinstall: $(SUBDIRS)
+ 	    dir=$(DESTDIR)$(prefix)/$$d; \
+ 	    if test ! -d $$dir; then \
+ 		echo "Creating directory hierarchy $$dir"; \
+-		$(srcdir)/mkinstalldirs $$dir; \
+-		chmod $(DIRMODE) $$dir; \
+-		$(DIRSETGID) $$dir; \
++		$(INSTALL) -d -m $(DIRMODE) $$dir; \
+ 	    else true; \
+ 	    fi; \
+ 	done
+@@ -114,9 +121,7 @@ doinstall: $(SUBDIRS)
+ 	    dir=$(DESTDIR)$(exec_prefix)/$$d; \
+ 	    if test ! -d $$dir; then \
+ 		echo "Creating directory hierarchy $$dir"; \
+-		$(srcdir)/mkinstalldirs $$dir; \
+-		chmod $(DIRMODE) $$dir; \
+-		$(DIRSETGID) $$dir; \
++		$(INSTALL) -d -m $(DIRMODE) $$dir; \
+ 	    else true; \
+ 	    fi; \
+ 	done
+diff --git a/bin/Makefile.in b/bin/Makefile.in
+index 22c24b0..d795333 100644
+--- a/bin/Makefile.in
++++ b/bin/Makefile.in
+@@ -28,7 +28,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ 
+ DEFS=   	@DEFS@
+@@ -56,7 +55,7 @@ BUILDDIR=	../build/bin
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+@@ -72,8 +71,6 @@ install:
+ 	    $(INSTALL) -m $(EXEMODE) $(BUILDDIR)/$$f $(DESTDIR)$(SCRIPTSDIR); \
+ 	done
+ 
+-finish:
+-
+ clean:
+ 
+ distclean:
+diff --git a/cron/Makefile.in b/cron/Makefile.in
+index 2a7c8fd..c14d119 100644
+--- a/cron/Makefile.in
++++ b/cron/Makefile.in
+@@ -28,7 +28,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ 
+ DEFS=   	@DEFS@
+@@ -68,8 +67,6 @@ install:
+ 	    $(INSTALL) -m $(EXEMODE) $(BUILDDIR)/$$f $(DESTDIR)$(CRONDIR); \
+ 	done
+ 
+-finish:
+-
+ clean:
+ 
+ distclean:
+diff --git a/messages/Makefile.in b/messages/Makefile.in
+index 2bbec3f..0b8b7d6 100644
+--- a/messages/Makefile.in
++++ b/messages/Makefile.in
+@@ -32,7 +32,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ 
+ DEFS=   	@DEFS@
+@@ -43,7 +42,6 @@ OPT=		@OPT@
+ CFLAGS=		$(OPT) $(DEFS)
+ PACKAGEDIR= 	$(prefix)/messages
+ SHELL=		/bin/sh
+-DIRSETGID=	chmod g+s
+ MSGFMT= 	@PYTHON@ ../build/bin/msgfmt.py
+ MSGMERGE=	msgmerge
+ 
+@@ -60,7 +58,7 @@ TARGETS=	$(MOFILES)
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+@@ -90,9 +88,8 @@ doinstall: mofiles
+ 	do \
+ 	    dir=$(DESTDIR)$(prefix)/$$d; \
+ 	    echo "Creating language directory $$dir"; \
+-	    $(srcdir)/../mkinstalldirs $$dir; \
+-	    chmod $(DIRMODE) $$dir; \
+-	    $(DIRSETGID) $$dir; \
++	    $(INSTALL) -d -m $(DIRMODE) `dirname $$dir`; \
++	    $(INSTALL) -d -m $(DIRMODE) $$dir; \
+ 	done
+ 	@for d in $(LANGUAGES); \
+ 	do \
+@@ -113,8 +110,6 @@ doinstall: mofiles
+ 
+ mofiles: $(MOFILES)
+ 
+-finish:
+-
+ clean:
+ 	-rm -f */LC_MESSAGES/mailman.mo
+ 
+diff --git a/misc/Makefile.in b/misc/Makefile.in
+index 5125cd8..af99c04 100644
+--- a/misc/Makefile.in
++++ b/misc/Makefile.in
+@@ -30,7 +30,6 @@ var_prefix=	@VAR_PREFIX@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ PYTHON=		@PYTHON@
+ 
+@@ -62,7 +61,7 @@ PACKAGES= $(EMAILPKG) $(JACODECSPKG) $(KOCODECSPKG)
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ DATAMODE=	664
+@@ -101,8 +100,6 @@ install-packages:
+ 	    (cd $(PKGDIR)/$$p ; umask 02 ; PYTHONPATH=$(PYTHONLIBDIR) $(PYTHON) $(SETUPCMD)); \
+ 	done
+ 
+-finish:
+-
+ clean:
+ 
+ distclean:
+diff --git a/scripts/Makefile.in b/scripts/Makefile.in
+index 49b82ec..cea250c 100644
+--- a/scripts/Makefile.in
++++ b/scripts/Makefile.in
+@@ -28,7 +28,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ 
+ DEFS=   	@DEFS@
+@@ -49,7 +48,7 @@ SCRIPTS=	bounces confirm driver join leave owner post request
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+@@ -68,8 +67,6 @@ install:
+ 	$(INSTALL) -m $(FILEMODE) $(srcdir)/join    $(DESTDIR)$(SCRIPTSDIR)/subscribe
+ 	$(INSTALL) -m $(FILEMODE) $(srcdir)/leave   $(DESTDIR)$(SCRIPTSDIR)/unsubscribe
+ 
+-finish:
+-
+ clean:
+ 
+ distclean:
+diff --git a/src/Makefile.in b/src/Makefile.in
+index ce52356..7ed820b 100644
+--- a/src/Makefile.in
++++ b/src/Makefile.in
+@@ -28,7 +28,6 @@ bindir= 	@bindir@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ PYTHON=  	@PYTHON@
+ 
+@@ -65,10 +64,9 @@ COMMON_FLAGS=	-DPREFIX="\"$(prefix)\"" \
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
+-EXEMODE=	755
++DIRMODE=	2775
++EXEMODE=	2755
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+-DIRSETGID=	chmod g+s
+ 
+ # Fixed definitions
+ 
+@@ -112,20 +110,10 @@ install: all
+ 	do \
+ 	    exe=$(DESTDIR)$(CGIDIR)/$$f$(CGIEXT); \
+ 	    $(INSTALL_PROGRAM) $$f $$exe; \
+-	    $(DIRSETGID) $$exe; \
+ 	done
+ 	for f in $(MAIL_PROGS); \
+ 	do \
+ 	    $(INSTALL_PROGRAM) $$f $(DESTDIR)$(MAILDIR); \
+-	    $(DIRSETGID) $(DESTDIR)$(MAILDIR)/$$f; \
+-	done
+-
+-finish:
+-	-for f in $(SUID_CGI_PROGS); \
+-	do \
+-	    exe=$(DESTDIR)$(CGIDIR)/$$f$(CGIEXT); \
+-	    chown $(MAILMAN_USER) $$exe; \
+-	    chmod u+s $$exe; \
+ 	done
+ 
+ clean:
+diff --git a/templates/Makefile.in b/templates/Makefile.in
+index 3dfee3a..b23d7c1 100644
+--- a/templates/Makefile.in
++++ b/templates/Makefile.in
+@@ -28,7 +28,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ TRUE=		@TRUE@
+ 
+@@ -48,7 +47,7 @@ LANGUAGES=	ar ast ca cs da de el en es et eu fi fr gl he hr hu ia it ja \
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+@@ -61,15 +60,13 @@ all:
+ install:
+ 	for d in $(LANGUAGES); \
+ 	do \
+-	    $(srcdir)/../mkinstalldirs $(DESTDIR)$(TEMPLATEDIR)/$$d; \
++	    $(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(TEMPLATEDIR)/$$d; \
+ 	    for f in $(srcdir)/$$d/*.html $(srcdir)/$$d/*.txt; \
+ 	    do \
+ 	    	$(INSTALL) -m $(FILEMODE) $$f $(DESTDIR)$(TEMPLATEDIR)/$$d; \
+ 	    done; \
+ 	done
+ 
+-finish:
+-
+ clean:
+ 
+ distclean:
+diff --git a/tests/Makefile.in b/tests/Makefile.in
+index 26d6e31..ca92425 100644
+--- a/tests/Makefile.in
++++ b/tests/Makefile.in
+@@ -28,7 +28,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ 
+ DEFS=   	@DEFS@
+@@ -46,7 +45,7 @@ EXECS=  	$(srcdir)/onebounce.py $(srcdir)/fblast.py
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+@@ -71,8 +70,6 @@ install:
+ 	    (cd $$d; $(MAKE) DESTDIR=$(DESTDIR) install); \
+ 	done
+ 
+-finish:
+-
+ clean:
+ 
+ distclean:
+diff --git a/tests/bounces/Makefile.in b/tests/bounces/Makefile.in
+index 5798097..f7014cb 100644
+--- a/tests/bounces/Makefile.in
++++ b/tests/bounces/Makefile.in
+@@ -28,7 +28,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ 
+ DEFS=   	@DEFS@
+@@ -46,7 +45,7 @@ BOUNCE_FILES=	$(srcdir)/*.txt
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+@@ -60,8 +59,6 @@ install:
+ 	    $(INSTALL) -m $(FILEMODE) $$f $(DESTDIR)$(BOUNCEDIR); \
+ 	done
+ 
+-finish:
+-
+ clean:
+ 
+ distclean:
+diff --git a/tests/msgs/Makefile.in b/tests/msgs/Makefile.in
+index 736d721..edef5ae 100644
+--- a/tests/msgs/Makefile.in
++++ b/tests/msgs/Makefile.in
+@@ -28,7 +28,6 @@ exec_prefix=	@exec_prefix@
+ DESTDIR=
+ 
+ CC=		@CC@
+-CHMOD=  	@CHMOD@
+ INSTALL=	@INSTALL@
+ 
+ DEFS=   	@DEFS@
+@@ -46,7 +45,7 @@ MSG_FILES=	$(srcdir)/*.txt
+ # Modes for directories and executables created by the install
+ # process.  Default to group-writable directories but
+ # user-only-writable for executables.
+-DIRMODE=	775
++DIRMODE=	2775
+ EXEMODE=	755
+ FILEMODE=	644
+ INSTALL_PROGRAM=$(INSTALL) -m $(EXEMODE)
+@@ -60,8 +59,6 @@ install:
+ 	    $(INSTALL) -m $(FILEMODE) $$f $(DESTDIR)$(MSGSDIR); \
+ 	done
+ 
+-finish:
+-
+ clean:
+ 
+ distclean:

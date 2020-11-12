@@ -43,7 +43,7 @@ try:
         sys.stdout.flush()
         i += 1
         if i % 50 == 0:
-            print
+            print()
         for j in range(10):
             conn.sendmail(FROMADDR, [LISTADDR], """\
 From: %(FROMADDR)s

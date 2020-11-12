@@ -21,13 +21,13 @@
 import os
 import unittest
 import errno
-import Cookie
+import http.cookies
 try:
     import crypt
 except ImportError:
     crypt = None
 # Don't use cStringIO because we're going to inherit
-from StringIO import StringIO
+from io import StringIO
 try:
     from Mailman import __init__
 except ImportError:
@@ -43,7 +43,7 @@ from TestBase import TestBase
 
 
 def password(plaintext):
-    return sha_new(plaintext).hexdigest()
+    return sha_new(plaintext.encode()).hexdigest()
 
 
 
@@ -99,12 +99,12 @@ class TestAuthenticate(TestBase):
     def tearDown(self):
         try:
             os.unlink(mm_cfg.SITE_PW_FILE)
-        except OSError, e:
-            if e.errno <> errno.ENOENT: raise
+        except OSError as e:
+            if e.errno != errno.ENOENT: raise
         try:
             os.unlink(mm_cfg.LISTCREATOR_PW_FILE)
-        except OSError, e:
-            if e.errno <> errno.ENOENT: raise
+        except OSError as e:
+            if e.errno != errno.ENOENT: raise
         TestBase.tearDown(self)
 
     def test_auth_creator(self):
@@ -136,7 +136,7 @@ class TestAuthenticate(TestBase):
     def test_list_admin_upgrade(self):
         eq = self.assertEqual
         mlist = self._mlist
-        mlist.password = md5_new('ssSSss').digest()
+        mlist.password = md5_new('ssSSss'.encode()).digest()
         eq(mlist.Authenticate(
             [mm_cfg.AuthListAdmin], 'ssSSss'), mm_cfg.AuthListAdmin)
         eq(mlist.password, password('ssSSss'))
@@ -150,10 +150,10 @@ class TestAuthenticate(TestBase):
     def test_list_admin_oldstyle_unauth(self):
         eq = self.assertEqual
         mlist = self._mlist
-        mlist.password = md5_new('ssSSss').digest()
+        mlist.password = md5_new('ssSSss'.encode()).digest()
         eq(mlist.Authenticate(
             [mm_cfg.AuthListAdmin], 'xxxxxx'), mm_cfg.UnAuthorized)
-        eq(mlist.password, md5_new('ssSSss').digest())
+        eq(mlist.password, md5_new('ssSSss'.encode()).digest())
         # Test crypt upgrades if crypt is supported
         if crypt:
             mlist.password = crypted = crypt.crypt('rrRRrr', 'zc')
@@ -217,11 +217,11 @@ class TestWebAuthenticate(TestBase):
         mlist.addNewMember('aperson@dom.ain', password='qqQQqq')
         # Set up the cookie data
         sfp = StripperIO()
-        print >> sfp, mlist.MakeCookie(mm_cfg.AuthSiteAdmin)
+        print(mlist.MakeCookie(mm_cfg.AuthSiteAdmin), file=sfp)
         # AuthCreator isn't handled in AuthContextInfo()
-        print >> sfp, mlist.MakeCookie(mm_cfg.AuthListAdmin)
-        print >> sfp, mlist.MakeCookie(mm_cfg.AuthListModerator)
-        print >> sfp, mlist.MakeCookie(mm_cfg.AuthUser, 'aperson@dom.ain')
+        print(mlist.MakeCookie(mm_cfg.AuthListAdmin), file=sfp)
+        print(mlist.MakeCookie(mm_cfg.AuthListModerator), file=sfp)
+        print(mlist.MakeCookie(mm_cfg.AuthUser, 'aperson@dom.ain'), file=sfp)
         # Strip off the "Set-Cookie: " prefix
         cookie = sfp.getvalue()
         os.environ['HTTP_COOKIE'] = cookie
@@ -229,12 +229,12 @@ class TestWebAuthenticate(TestBase):
     def tearDown(self):
         try:
             os.unlink(mm_cfg.SITE_PW_FILE)
-        except OSError, e:
-            if e.errno <> errno.ENOENT: raise
+        except OSError as e:
+            if e.errno != errno.ENOENT: raise
         try:
             os.unlink(mm_cfg.LISTCREATOR_PW_FILE)
-        except OSError, e:
-            if e.errno <> errno.ENOENT: raise
+        except OSError as e:
+            if e.errno != errno.ENOENT: raise
         del os.environ['HTTP_COOKIE']
         TestBase.tearDown(self)
 

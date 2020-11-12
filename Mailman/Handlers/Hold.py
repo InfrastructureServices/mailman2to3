@@ -29,10 +29,12 @@ message handling should stop.
 """
 
 import email
-from email.MIMEText import MIMEText
-from email.MIMEMessage import MIMEMessage
-import email.Utils
-from types import ClassType
+from email.mime.text import MIMEText
+from email.message import EmailMessage as MIMEMessage
+
+
+from email.mime import message
+import email.utils
 
 from Mailman import mm_cfg
 from Mailman import Utils
@@ -147,7 +149,7 @@ def process(mlist, msg, msgdata):
     # Are there too many recipients to the message?
     if mlist.max_num_recipients > 0:
         # figure out how many recipients there are
-        recips = email.Utils.getaddresses(msg.get_all('to', []) +
+        recips = email.utils.getaddresses(msg.get_all('to', []) +
                                           msg.get_all('cc', []))
         if len(recips) >= mlist.max_num_recipients:
             hold_for_approval(mlist, msg, msgdata, TooManyRecipients)
@@ -174,7 +176,7 @@ def process(mlist, msg, msgdata):
     # Is the message too big?
     if mlist.max_message_size > 0:
         bodylen = 0
-        for line in email.Iterators.body_line_iterator(msg):
+        for line in email.iterators.body_line_iterator(msg):
             bodylen += len(line)
         for part in msg.walk():
             if part.preamble:
@@ -202,7 +204,8 @@ def hold_for_approval(mlist, msg, msgdata, exc):
     # type is a function not a type and so can't be used as the second
     # argument in isinstance().  However, in Python 2.5, exceptions are
     # new-style classes and so are not of ClassType.
-    if isinstance(exc, ClassType) or isinstance(exc, type(type)):
+    # FIXME pzv
+    if isinstance(exc, type) or isinstance(exc, type(type)):
         # Go ahead and instantiate it now.
         exc = exc()
     listname = mlist.real_name
@@ -285,11 +288,11 @@ also appear in the first line of the body of the reply.""")),
             dmsg['Subject'] = 'confirm ' + cookie
             dmsg['Sender'] = requestaddr
             dmsg['From'] = requestaddr
-            dmsg['Date'] = email.Utils.formatdate(localtime=True)
+            dmsg['Date'] = email.utils.formatdate(localtime=True)
             dmsg['Message-ID'] = Utils.unique_message_id(mlist)
             nmsg.attach(text)
-            nmsg.attach(MIMEMessage(msg))
-            nmsg.attach(MIMEMessage(dmsg))
+            nmsg.attach(message.MIMEMessage(msg))
+            nmsg.attach(message.MIMEMessage(dmsg))
             nmsg.send(mlist, **{'tomoderators': 1})
         finally:
             i18n.set_translation(otranslation)

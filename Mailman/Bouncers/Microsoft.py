@@ -18,7 +18,6 @@
 
 import re
 from io import StringIO
-from types import ListType
 
 scre = re.compile(r'transcript of session follows', re.IGNORECASE)
 
@@ -34,7 +33,7 @@ def process(msg):
         # The message *looked* like a multipart but wasn't
         return None
     data = subpart.get_payload()
-    if isinstance(data, ListType):
+    if isinstance(data, list):
         # The message is a multi-multipart, so not a matching bounce
         return None
     body = StringIO(data)

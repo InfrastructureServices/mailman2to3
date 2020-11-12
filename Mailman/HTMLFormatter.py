@@ -370,7 +370,7 @@ class HTMLFormatter:
             tag = parts[i].lower()
             if tag in replacements:
                 repl = replacements[tag]
-                if isinstance(repl, type('')):
+                if isinstance(repl, (bytes, bytearray)):
                     repl = repl.encode(charset, 'replace')
                 parts[i] = repl
             else:

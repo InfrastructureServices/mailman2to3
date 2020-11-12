@@ -466,7 +466,7 @@ class InputObj:
             output.append('CHECKED')
         output.append('>')
         ret = SPACE.join(output)
-        if self.type == 'TEXT' and isinstance(ret, str):
+        if self.type == 'TEXT' and isinstance(ret, bytes):
             ret = ret.encode(charset, 'xmlcharrefreplace')
         return ret
 
@@ -517,7 +517,7 @@ class TextArea:
         if self.readonly:
             output += ' READONLY'
         output += '>%s</TEXTAREA>' % self.text
-        if isinstance(output, str):
+        if isinstance(output, bytes):
             output = output.encode(charset, 'xmlcharrefreplace')
         return output
 

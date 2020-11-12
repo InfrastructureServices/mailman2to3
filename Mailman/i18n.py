@@ -19,7 +19,6 @@ import sys
 import time
 import locale
 import gettext
-from types import StringType, UnicodeType
 
 from Mailman import mm_cfg
 from Mailman.SafeDict import SafeDict
@@ -98,8 +97,10 @@ def _(s, frame=1):
     if not charset:
         charset = 'us-ascii'
     for k, v in list(dict.items()):
-        if isinstance(v, UnicodeType):
-            dict[k] = v.encode(charset, 'replace')
+        if isinstance(v, str):
+            dict[k] = v
+        if isinstance(v, (bytes, bytearray)):
+            dict[k] = v.decode(charset, 'replace')
     try:
         return tns % dict
     except (ValueError, TypeError):
@@ -110,7 +111,7 @@ def _(s, frame=1):
 
 def tolocale(s):
     global _ctype_charset
-    if isinstance(s, UnicodeType) or _ctype_charset is None:
+    if isinstance(s, str) or _ctype_charset is None:
         return s
     source = _translation.charset ()
     if not source:
@@ -139,7 +140,7 @@ def ctime(date):
         ]
 
     tzname = _('Server Local Time')
-    if isinstance(date, StringType):
+    if isinstance(date, str):
         try:
             year, mon, day, hh, mm, ss, wday, ydat, dst = time.strptime(date)
             if dst in (0,1):

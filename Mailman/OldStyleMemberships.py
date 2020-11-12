@@ -25,7 +25,6 @@ This is the adaptor used by default in Mailman 2.1.
 """
 
 import time
-from types import StringType
 
 from Mailman import mm_cfg
 from Mailman import Utils
@@ -64,13 +63,13 @@ class OldStyleMemberships(MemberAdaptor.MemberAdaptor):
         missing = []
         val = self.__mlist.members.get(lcmember, missing)
         if val is not missing:
-            if isinstance(val, StringType):
+            if isinstance(val, str):
                 return val, ISREGULAR
             else:
                 return lcmember, ISREGULAR
         val = self.__mlist.digest_members.get(lcmember, missing)
         if val is not missing:
-            if isinstance(val, StringType):
+            if isinstance(val, str):
                 return val, ISDIGEST
             else:
                 return lcmember, ISDIGEST

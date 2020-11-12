@@ -25,11 +25,6 @@ import errno
 
 from Mailman import mm_cfg
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 

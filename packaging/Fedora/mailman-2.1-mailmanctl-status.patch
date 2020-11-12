@@ -1,0 +1,109 @@
+diff --git a/bin/mailmanctl b/bin/mailmanctl
+index fa14a2c..e291df1 100644
+--- a/bin/mailmanctl
++++ b/bin/mailmanctl
+@@ -36,7 +36,7 @@ in the file data/master-qrunner.pid but you normally don't need to use this
+ pid directly.  The `start', `stop', `restart', and `reopen' commands handle
+ everything for you.
+ 
+-Usage: %(PROGRAM)s [options] [ start | stop | restart | reopen ]
++Usage: %(PROGRAM)s [options] [ start | stop | restart | reopen | status ]
+ 
+ Options:
+ 
+@@ -90,6 +90,9 @@ Commands:
+ 
+     reopen  - This will close all log files, causing them to be re-opened the
+               next time a message is written to them
++
++    status  - This returns a string indicating the status of the master
++              qrunner
+ """
+ 
+ import sys
+@@ -190,6 +193,52 @@ def qrunner_state():
+         return 0
+     return 1
+ 
++def mailman_status():
++    # return status, pid
++    #
++    # These status values match the /etc/init.d status values
++    # (at least on Red Hat), try to return equivalent status if possible
++    # status is 0 if running,
++    # status is 1 if dead but pid file exists
++    # status is 2 if dead but subsys locked
++    # status is 3 if stopped (pid returned will be 0)
++    #
++    #
++    # We want any user to be able to query the status and this presents
++    # few interesting permission problems and is why we don't use
++    # qrunner_state(). The pidfile is only readable by the mailman owner
++    # and group, however the lockfile is world readable. So we will
++    # get the master pid from the lockfile. We try to determine if the
++    # master process exists by sending it a signal. If we don't have
++    # permission to signal the process, but the process exists we'll
++    # get a EPERM error, if the process does not exist then we'll get
++    # a ESRCH error.
++
++    try:
++        hostname, pid, tempfile = get_lock_data()
++    except IOError, e:
++        if e.errno == errno.ENOENT:
++            # Lock file didn't exist, can't be running
++            return 3, 0
++        else:
++            raise
++    if hostname <> socket.gethostname():
++        # not running on this host
++        return 3, 0
++    # Find out if the process exists by calling kill with a signal 0.
++    try:
++        os.kill(pid, 0)
++    except OSError, e:
++        if e.errno == errno.ESRCH:
++            # process does not exist
++            return 1, pid
++        elif e.errno == errno.EPERM:
++            # we don't have permission signal the process but it exists
++            return 0, pid
++        else:
++            raise
++    return 0, pid
++
+ 
+ def acquire_lock_1(force):
+     # Be sure we can acquire the master qrunner lock.  If not, it means some
+@@ -338,13 +387,15 @@ def main():
+         command = COMMASPACE.join(args)
+         usage(1, C_('Bad command: %(command)s'))
+ 
++    command = args[0].lower()
++
+     if checkprivs:
+         check_privs()
+     else:
+-        print C_('Warning!  You may encounter permission problems.')
++        if command != 'status':
++	    print C_('Warning!  You may encounter permission problems.')
+ 
+     # Handle the commands
+-    command = args[0].lower()
+     if command == 'stop':
+         # Sent the master qrunner process a SIGINT, which is equivalent to
+         # giving cron/qrunner a ctrl-c or KeyboardInterrupt.  This will
+@@ -363,6 +414,14 @@ def main():
+         if not quiet:
+             print C_('Re-opening all log files')
+         kill_watcher(signal.SIGHUP)
++    elif command == 'status':
++        status, pid = mailman_status()
++        if not quiet:
++            if status == 0:
++                print C_("mailman (pid %(pid)d) is running...")
++            else:
++                print C_("mailman is stopped")
++        sys.exit(status)
+     elif command == 'start':
+         # First, complain loudly if there's no site list.
+         check_for_site_list()

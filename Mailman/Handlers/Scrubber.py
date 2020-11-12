@@ -26,12 +26,11 @@ import errno
 import binascii
 import tempfile
 from io import StringIO
-from types import IntType, StringType
 
-from email.Utils import parsedate
-from email.Parser import HeaderParser
-from email.Generator import Generator
-from email.Charset import Charset
+from email.utils import parsedate
+from email.parser import HeaderParser
+from email.generator import Generator
+from email.charset import Charset
 
 from Mailman import mm_cfg
 from Mailman import Utils
@@ -53,11 +52,6 @@ dre = re.compile(r'^\.*')
 BR = '<br>\n'
 SPACE = ' '
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 try:
@@ -137,7 +131,7 @@ def calculate_attachments_dir(mlist, msg, msgdata):
     if msgid is None:
         msgid = msg['Message-ID'] = Utils.unique_message_id(mlist)
     # We assume that the message id actually /is/ unique!
-    digest = sha_new(msgid).hexdigest()
+    digest = sha_new(msgid.encode()).hexdigest()
     return os.path.join('attachments', datedir, digest[:4] + digest[-4:])
 
 
@@ -207,7 +201,7 @@ An embedded and charset-unspecified text was scrubbed...
 Name: %(filename)s
 URL: %(url)s
 """), lcset)
-        elif ctype == 'text/html' and isinstance(sanitize, IntType):
+        elif ctype == 'text/html' and isinstance(sanitize, int):
             if sanitize == 0:
                 if outer:
                     raise DiscardMessage
@@ -377,7 +371,7 @@ URL: %(url)s
                     # if the message charset is bogus, use the list's.
                     t = t.encode(lcset, 'replace')
             # Separation is useful
-            if isinstance(t, StringType):
+            if isinstance(t, str):
                 if not t.endswith('\n'):
                     t += '\n'
                 text.append(t)
@@ -496,7 +490,7 @@ def save_attachment(mlist, msg, dir, filter_html=True):
     if filter_html and ctype == 'text/html':
         base, ext = os.path.splitext(path)
         tmppath = base + '-tmp' + ext
-        fp = open(tmppath, 'w')
+        fp = open(tmppath, 'wb')
         try:
             fp.write(decodedpayload)
             fp.close()
@@ -520,7 +514,7 @@ def save_attachment(mlist, msg, dir, filter_html=True):
         submsg = msg.get_payload()
         # BAW: I'm sure we can eventually do better than this. :(
         decodedpayload = Utils.websafe(str(submsg))
-    fp = open(path, 'w')
+    fp = open(path, 'wb')
     fp.write(decodedpayload)
     fp.close()
     # Now calculate the url

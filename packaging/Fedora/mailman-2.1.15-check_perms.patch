@@ -1,0 +1,22 @@
+diff --git a/bin/check_perms b/bin/check_perms
+index 5ef3306..d50518a 100755
+--- a/bin/check_perms
++++ b/bin/check_perms
+@@ -70,7 +70,7 @@ class State:
+ 
+ STATE = State()
+ 
+-DIRPERMS = S_ISGID | S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH
++DIRPERMS = S_IRWXU | S_IRGRP | S_IROTH | S_IXOTH
+ QFILEPERMS = S_ISGID | S_IRWXU | S_IRWXG
+ PYFILEPERMS = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH
+ ARTICLEFILEPERMS = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP
+@@ -195,7 +195,7 @@ def checkall():
+             continue
+         if (mode & DIRPERMS) <> DIRPERMS:
+             STATE.ERRORS += 1
+-            print C_('directory must be at least 02775: %(d)s'),
++            print C_('directory must be at least 0755: %(d)s'),
+             if STATE.FIX:
+                 print C_('(fixing)')
+                 os.chmod(d, mode | DIRPERMS)

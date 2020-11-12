@@ -37,10 +37,9 @@ import random
 import urllib.request, urllib.error, urllib.parse
 import urllib.parse
 import html.entities
-import email.Header
-import email.Iterators
-from email.Errors import HeaderParseError
-from types import UnicodeType
+import email.header
+import email.iterators
+from email.errors import HeaderParseError
 from string import whitespace, digits
 try:
     # Python 2.2
@@ -56,21 +55,22 @@ from Mailman import Site
 from Mailman.SafeDict import SafeDict
 from Mailman.Logging.Syslog import syslog
 
+
+
 try:
     import hashlib
+    def sha_new_encode(string):
+        if isinstance(string, str):
+            return hashlib.sha1(string.encode())
+        return hashlib.sha1(string)
     md5_new = hashlib.md5
-    sha_new = hashlib.sha1
+    sha_new = sha_new_encode
 except ImportError:
     import md5
     import sha
     md5_new = md5.new
     sha_new = sha.new
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 try:
     import dns.resolver
@@ -156,10 +156,7 @@ def wrap(text, column=70, honor_leading_ws=True):
             if not line:
                 lines.append(line)
                 continue
-            if honor_leading_ws and line[0] in whitespace:
-                fillthis = False
-            else:
-                fillthis = True
+            fillthis = honor_leading_ws and line[0] in whitespace
             if fillprev and fillthis:
                 # if the previous line should be filled, then just append a
                 # single space, and the rest of the current line
@@ -442,9 +439,11 @@ def set_global_password(pw, siteadmin=True):
     omask = os.umask(0o26)
     try:
         fp = open(filename, 'w')
-        fp.write(sha_new(pw).hexdigest() + '\n')
+        fp.write(sha_new(pw.encode()).hexdigest() + '\n')
         fp.close()
     finally:
+        # make sure malman group has read permission
+        os.chown(filename, uid=-1, gid=mm_cfg.MAILMAN_GID)
         os.umask(omask)
 
 
@@ -468,7 +467,7 @@ def check_global_password(response, siteadmin=True):
     challenge = get_global_password(siteadmin)
     if challenge is None:
         return None
-    return challenge == sha_new(response).hexdigest()
+    return challenge == sha_new(response.encode()).hexdigest()
 
 
 
@@ -664,7 +663,7 @@ ADMINDATA = {
 def is_administrivia(msg):
     linecnt = 0
     lines = []
-    for line in email.Iterators.body_line_iterator(msg):
+    for line in email.iterators.body_line_iterator(msg):
         # Strip out any signatures
         if line == '-- ':
             break
@@ -679,7 +678,7 @@ def is_administrivia(msg):
         return True
     # Look at the first N lines and see if there is any administrivia on the
     # line.  BAW: N is currently hardcoded to 5.  str-ify the Subject: header
-    # because it may be an email.Header.Header instance rather than a string.
+    # because it may be an email.header.Header instance rather than a string.
     bodylines = lines[:5]
     subject = str(msg.get('subject', ''))
     bodylines.append(subject)
@@ -926,10 +925,9 @@ def uncanonstr(s, lang=None):
     # set.  If so, return it unchanged, except for coercing it to a byte
     # string.
     try:
-        if isinstance(s, UnicodeType):
+        if isinstance(s, (bytes, bytearray)):
             return s.encode(charset)
         else:
-            u = str(s, charset)
             return s
     except UnicodeError:
         # Nope, it contains funny characters, so html-ref it
@@ -951,8 +949,8 @@ def uquote(s):
 def oneline(s, cset):
     # Decode header string in one line and convert into specified charset
     try:
-        h = email.Header.make_header(email.Header.decode_header(s))
-        ustr = h.__unicode__()
+        h = email.header.make_header(email.header.decode_header(s))
+        ustr = str(h)
         line = UEMPTYSTRING.join(ustr.splitlines())
         return line.encode(cset, 'replace')
     except (LookupError, UnicodeError, ValueError, HeaderParseError):
@@ -1498,11 +1496,11 @@ def xml_to_unicode(s, cset):
     unicode replace character and recognizing \\u escapes.
     """
     if isinstance(s, str):
-        us = s.decode(cset, 'replace')
         us = re.sub('&(#[0-9]+);', _invert_xml, us)
         us = re.sub('(?i)\\\\(u[a-f0-9]{4})', _invert_xml, us)
         return us
     else:
+        ## FIXME shouldn't be deconding here? 
         return s
 
 def banned_ip(ip):
@@ -1514,7 +1512,7 @@ def banned_ip(ip):
             ptr = ipaddress.ip_address(uip).reverse_pointer
         except ValueError:
             return False
-	lookup = '{0}.zen.spamhaus.org'.format('.'.join(ptr.split('.')[:-2]))
+        lookup = '{0}.zen.spamhaus.org'.format('.'.join(ptr.split('.')[:-2]))
     else:
         parts = ip.split('.')
         if len(parts) != 4:

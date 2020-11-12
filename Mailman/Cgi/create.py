@@ -21,7 +21,6 @@ import sys
 import os
 import signal
 import cgi
-from types import ListType
 
 from Mailman import mm_cfg
 from Mailman import MailList
@@ -106,7 +105,7 @@ def process_request(doc, cgidata):
     auth     = cgidata.getfirst('auth', '').strip()
     langs    = cgidata.getvalue('langs', [mm_cfg.DEFAULT_SERVER_LANGUAGE])
 
-    if not isinstance(langs, ListType):
+    if not isinstance(langs, list):
         langs = [langs]
     # Sanity check
     safelistname = Utils.websafe(listname)
@@ -191,7 +190,7 @@ def process_request(doc, cgidata):
         # Install the emergency shutdown signal handler
         signal.signal(signal.SIGTERM, sigterm_handler)
 
-        pw = sha_new(password).hexdigest()
+        pw = sha_new(password.encode()).hexdigest()
         # Guarantee that all newly created files have the proper permission.
         # proper group ownership should be assured by the autoconf script
         # enforcing that all directories have the group sticky bit set

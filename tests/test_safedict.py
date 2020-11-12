@@ -84,7 +84,7 @@ Cc: bperson@dom.ain
     def test_copy(self):
         sd = SafeDict.MsgSafeDict(self._msg, {'foo': 'bar'})
         copy = sd.copy()
-        items = copy.items()
+        items = list(copy.items())
         items.sort()
         self.assertEqual(items, [
             ('allmsg_cc', 'aperson@dom.ain, bperson@dom.ain'),

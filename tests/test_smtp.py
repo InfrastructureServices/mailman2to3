@@ -19,7 +19,7 @@
 
 import email
 import unittest
-import thread
+import _thread
 try:
     from Mailman import __init__
 except ImportError:
@@ -59,7 +59,7 @@ Subject: testing
 
 testing
 """)
-        id = thread.start_new_thread(self._readmsg, ())
+        id = _thread.start_new_thread(self._readmsg, ())
         SMTPDirect.process(self._mlist, msg, msgdata)
 
 

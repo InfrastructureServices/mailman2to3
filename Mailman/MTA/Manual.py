@@ -18,7 +18,7 @@
 """Creation/deletion hooks for manual /etc/aliases files."""
 
 import sys
-import email.Utils
+import email.utils
 from io import StringIO
 
 from Mailman import mm_cfg
@@ -28,11 +28,6 @@ from Mailman.Queue.sbcache import get_switchboard
 from Mailman.i18n import _, C_
 from Mailman.MTA.Utils import makealiases
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 
@@ -63,7 +58,7 @@ def create(mlist, cgi=False, nolock=False, quiet=False):
         # be installed.
         sfp = StringIO()
         if not quiet:
-            print(_("""\
+            print(_("""
 The mailing list `%(listname)s' has been created via the through-the-web
 interface.  In order to complete the activation of this mailing list, the
 proper /etc/aliases (or equivalent) file must be updated.  The program
@@ -141,6 +136,6 @@ equivalent) file by removing the following lines, and possibly running the
         siteowner, siteowner,
         _('Mailing list removal request for list %(listname)s'),
         sfp.getvalue(), mm_cfg.DEFAULT_SERVER_LANGUAGE)
-    msg['Date'] = email.Utils.formatdate(localtime=1)
+    msg['Date'] = email.utils.formatdate(localtime=1)
     outq = get_switchboard(mm_cfg.OUTQUEUE_DIR)
     outq.enqueue(msg, recips=[siteowner], nodecorate=1)

@@ -26,9 +26,8 @@ import re
 import cgi
 import urllib.request, urllib.parse, urllib.error
 import signal
-from types import *
 
-from email.Utils import unquote, parseaddr, formataddr
+from email.utils import unquote, parseaddr, formataddr
 
 from Mailman import mm_cfg
 from Mailman import Utils
@@ -52,12 +51,6 @@ def D_(s):
 
 NL = '\n'
 OPTCOLUMNS = 11
-
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 AUTH_CONTEXTS = (mm_cfg.AuthListAdmin, mm_cfg.AuthSiteAdmin)
 
@@ -169,7 +162,7 @@ def main():
         # POST methods, even if their actions have a query string, don't get
         # put into FieldStorage's keys :-(
         qs = parsedqs.get('VARHELP')
-        if qs and isinstance(qs, ListType):
+        if qs and isinstance(qs, list):
             varhelp = qs[0]
     if varhelp:
         option_help(mlist, varhelp)
@@ -601,7 +594,7 @@ def show_variables(mlist, category, subcat, cgidata, doc):
     # The very first item in the config info will be treated as a general
     # description if it is a string
     description = options[0]
-    if isinstance(description, StringType):
+    if isinstance(description, str):
         table.AddRow([description])
         table.AddCellInfo(table.GetCurrentRowIndex(), 0, colspan=2)
         options = options[1:]
@@ -618,7 +611,7 @@ def show_variables(mlist, category, subcat, cgidata, doc):
                       width='85%')
 
     for item in options:
-        if type(item) == StringType:
+        if type(item) == str:
             # The very first banner option (string in an options list) is
             # treated as a general description, while any others are
             # treated as section headers - centered and italicized...
@@ -1019,7 +1012,7 @@ def membership_options(mlist, subcat, cgidata, doc, form):
             if regexp:
                 findfrag = '&findmember=' + urllib.parse.quote(regexp)
             url = adminurl + '/members?letter=' + letter + findfrag
-            if isinstance(url, str):
+            if isinstance(url, (bytes, bytearray)):
                 url = url.encode(Utils.GetCharSet(mlist.preferred_language),
                                  errors='ignore')
             if letter == bucket:
@@ -1178,7 +1171,7 @@ def membership_options(mlist, subcat, cgidata, doc, form):
     qsenviron = os.environ.get('QUERY_STRING')
     if qsenviron:
         qs = cgi.parse_qs(qsenviron).get('legend')
-        if qs and isinstance(qs, ListType):
+        if qs and isinstance(qs, list):
             qs = qs[0]
         if qs == 'yes':
             addlegend = 'legend=yes&'
@@ -1207,7 +1200,7 @@ def membership_options(mlist, subcat, cgidata, doc, form):
             start = chunkmembers[i*chunksz]
             end = chunkmembers[min((i+1)*chunksz, last)-1]
             thisurl = url + 'chunk=%d' % i + findfrag
-            if isinstance(thisurl, str):
+            if isinstance(thisurl, (bytes, bytearray)):
                 thisurl = thisurl.encode(
                                  Utils.GetCharSet(mlist.preferred_language),
                                  errors='ignore')
@@ -1414,7 +1407,7 @@ def change_options(mlist, category, subcat, cgidata, doc):
     confirm = cgidata.getfirst('confirmmodpw', '').strip()
     if new or confirm:
         if new == confirm:
-            mlist.mod_password = sha_new(new).hexdigest()
+            mlist.mod_password = sha_new(new.encode()).hexdigest()
             # No re-authentication necessary because the moderator's
             # password doesn't get you into these pages.
         else:
@@ -1425,7 +1418,7 @@ def change_options(mlist, category, subcat, cgidata, doc):
     confirm = cgidata.getfirst('confirmpostpw', '').strip()
     if new or confirm:
         if new == confirm:
-            mlist.post_password = sha_new(new).hexdigest()
+            mlist.post_password = sha_new(new.encode()).hexdigest()
             # No re-authentication necessary because the poster's
             # password doesn't get you into these pages.
         else:
@@ -1435,7 +1428,7 @@ def change_options(mlist, category, subcat, cgidata, doc):
     confirm = cgidata.getfirst('confirmpw', '').strip()
     if new or confirm:
         if new == confirm:
-            mlist.password = sha_new(new).hexdigest()
+            mlist.password = sha_new(new.encode()).hexdigest()
             # Set new cookie
             print(mlist.MakeCookie(mm_cfg.AuthListAdmin))
         else:
@@ -1642,7 +1635,7 @@ def change_options(mlist, category, subcat, cgidata, doc):
     # do the user options for members category
     if 'setmemberopts_btn' in cgidata and 'user' in cgidata:
         user = cgidata['user']
-        if type(user) is ListType:
+        if isinstance(user, list):
             users = []
             for ui in range(len(user)):
                 users.append(urllib.parse.unquote(user[ui].value))

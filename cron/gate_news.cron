@@ -38,7 +38,7 @@ import nntplib
 import paths
 # Import this /after/ paths so that the sys.path is properly hacked
 import email.Errors
-from email.Parser import Parser
+from email.parser import Parser
 
 from Mailman import mm_cfg
 from Mailman import MailList
@@ -67,11 +67,6 @@ class _ContinueLoop(Exception):
     pass
 
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 

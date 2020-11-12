@@ -24,7 +24,6 @@ import errno
 import signal
 import email
 import time
-from types import ListType
 from urllib.parse import quote_plus, unquote_plus
 
 from Mailman import mm_cfg
@@ -198,13 +197,13 @@ def main():
         # POST methods, even if their actions have a query string, don't get
         # put into FieldStorage's keys :-(
         qs = cgi.parse_qs(envar).get('sender')
-        if qs and type(qs) == ListType:
+        if qs and isinstance(qs, list):
             sender = qs[0]
         qs = cgi.parse_qs(envar).get('msgid')
-        if qs and type(qs) == ListType:
+        if qs and isinstance(qs,list):
             msgid = qs[0]
         qs = cgi.parse_qs(envar).get('details')
-        if qs and type(qs) == ListType:
+        if qs and isinstance(qs, list):
             details = qs[0]
 
     # We need a signal handler to catch the SIGTERM that can come from Apache
@@ -683,7 +682,7 @@ def show_post_requests(mlist, id, info, total, count, form):
         msg += _(' (%(count)d of %(total)d)')
     form.AddItem(Center(Header(2, msg)))
     # We need to get the headers and part of the textual body of the message
-    # being held.  The best way to do this is to use the email Parser to get
+    # being held.  The best way to do this is to use the email.parser to get
     # an actual object, which will be easier to deal with.  We probably could
     # just do raw reads on the file.
     try:
@@ -699,7 +698,7 @@ def show_post_requests(mlist, id, info, total, count, form):
         except Errors.LostHeldMessage:
             pass
         return
-    except email.Errors.MessageParseError:
+    except email.errors.MessageParseError:
         form.AddItem(_('<em>Message with id #%(id)d is corrupted.'))
         # BAW: Should we really delete this, or shuttle it off for site admin
         # to look more closely at?
@@ -715,7 +714,7 @@ def show_post_requests(mlist, id, info, total, count, form):
     chars = 0
     # A negative value means, include the entire message regardless of size
     limit = mm_cfg.ADMINDB_PAGE_TEXT_LIMIT
-    for line in email.Iterators.body_line_iterator(msg, decode=True):
+    for line in email.iterators.body_line_iterator(msg, decode=True):
         lines.append(line)
         chars += len(line)
         if chars >= limit > 0:
@@ -737,7 +736,7 @@ def show_post_requests(mlist, id, info, total, count, form):
     lcset = Utils.GetCharSet(mlist.preferred_language)
     if mcset != lcset:
         try:
-            body = str(body, mcset, 'replace').encode(lcset, 'replace')
+            body = str(body, mcset, 'replace')
         except (LookupError, UnicodeError, ValueError):
             pass
     hdrtxt = NL.join(['%s: %s' % (k, v) for k, v in list(msg.items())])
@@ -901,7 +900,7 @@ def process_form(mlist, doc, cgidata):
     erroraddrs = []
     for k in list(cgidata.keys()):
         formv = cgidata[k]
-        if type(formv) == ListType:
+        if isinstance(formv, list):
             continue
         try:
             v = int(formv.value)

@@ -51,7 +51,7 @@ def process(msg):
     if not mailer.startswith('<SMTP32 v'):
         return
     addrs = {}
-    for line in email.Iterators.body_line_iterator(msg):
+    for line in email.iterators.body_line_iterator(msg):
         if ecre.search(line):
             break
         mo = acre.search(line)

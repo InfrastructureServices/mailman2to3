@@ -40,11 +40,6 @@ _ALLKEYS = (SUBSCRIPTION, UNSUBSCRIPTION,
             RE_ENABLE, PROBE_BOUNCE,
             )
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 _missing = []
@@ -89,7 +84,7 @@ class Pending:
 
     def __load(self):
         try:
-            fp = open(self.__pendfile)
+            fp = open(self.__pendfile, 'rb')
         except IOError as e:
             if e.errno != errno.ENOENT: raise
             return {'evictions': {}}
@@ -117,7 +112,7 @@ class Pending:
         tmpfile = '%s.tmp.%d.%d' % (self.__pendfile, os.getpid(), now)
         omask = os.umask(0o07)
         try:
-            fp = open(tmpfile, 'w')
+            fp = open(tmpfile, 'wb')
             try:
                 pickle.dump(db, fp)
                 fp.flush()

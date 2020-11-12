@@ -31,13 +31,8 @@ from Mailman import i18n
 from Mailman.Logging.Syslog import syslog
 from Mailman.Queue.Switchboard import Switchboard
 
-import email.Errors
+import email.errors
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 
@@ -98,7 +93,7 @@ class Runner:
                 # associated with this filebase.
                 msg, msgdata = self._switchboard.dequeue(filebase)
             except Exception as e:
-                # This used to just catch email.Errors.MessageParseError,
+                # This used to just catch email.errors.MessageParseError,
                 # but other problems can occur in message parsing, e.g.
                 # ValueError, and exceptions can occur in unpickling too.
                 # We don't want the runner to die, so we just log and skip

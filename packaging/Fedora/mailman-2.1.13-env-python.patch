@@ -1,0 +1,75 @@
+diff --git a/tests/onebounce.py b/tests/onebounce.py
+index 00a695f..ae7fe1a 100644
+--- a/tests/onebounce.py
++++ b/tests/onebounce.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python
++#! /usr/bin/python3
+ 
+ # Copyright (C) 2002-2018 by the Free Software Foundation, Inc.
+ #
+diff --git a/configure.in b/configure.in
+index eee7f3a..2250ade 100644
+--- a/configure.in
++++ b/configure.in
+@@ -892,6 +892,10 @@ cron/gate_news \
+ cron/mailpasswds \
+ cron/nightly_gzip \
+ cron/senddigests \
++contrib/check_perms_grsecurity.py \
++contrib/qmail-to-mailman.py \
++contrib/rotatelogs.py \
++contrib/sitemapgen
+ ])
+ 
+ dnl Please make sure to leave a space at the end of the last entry.
+diff --git a/Mailman/Archiver/pipermail.py b/Mailman/Archiver/pipermail.py
+index cfca480..3d6a9d6 100644
+--- a/Mailman/Archiver/pipermail.py
++++ b/Mailman/Archiver/pipermail.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python
++#! /usr/bin/python3
+ 
+ from __future__ import nested_scopes
+ 
+diff --git a/Mailman/Archiver/pipermail.py.unicode b/Mailman/Archiver/pipermail.py.unicode
+index 62fb92e..a663829 100644
+--- a/Mailman/Archiver/pipermail.py.unicode
++++ b/Mailman/Archiver/pipermail.py.unicode
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python
++#! /usr/bin/python3
+ 
+ from __future__ import nested_scopes
+ 
+diff --git a/Mailman/Post.py b/Mailman/Post.py
+index 7f86696..b4dcfb0 100644
+--- a/Mailman/Post.py
++++ b/Mailman/Post.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python
++#! /usr/bin/python3
+ #
+ # Copyright (C) 2001-2018 by the Free Software Foundation, Inc.
+ #
+diff --git a/tests/fblast.py b/tests/fblast.py
+index 092e420..905401d 100644
+--- a/tests/fblast.py
++++ b/tests/fblast.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python
++#! /usr/bin/python3
+ """Throw email at Mailman as fast as you can.
+ 
+ This is not a unit test, it's a functional test, so you can't run it within
+diff --git a/bin/msgfmt.py b/bin/msgfmt.py
+index 8a2d4e6..13a3c73 100644
+--- a/bin/msgfmt.py
++++ b/bin/msgfmt.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python
++#! /usr/bin/python3
+ # -*- coding: iso-8859-1 -*-
+ # Written by Martin v. Löwis <loewis@informatik.hu-berlin.de>
+ 

@@ -23,7 +23,6 @@ import os
 import cgi
 import signal
 import urllib.request, urllib.parse, urllib.error
-from types import ListType
 
 from Mailman import mm_cfg
 from Mailman import Utils
@@ -48,11 +47,6 @@ i18n.set_language(mm_cfg.DEFAULT_SERVER_LANGUAGE)
 def D_(s):
     return s
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 AUTH_CONTEXTS = (mm_cfg.AuthListAdmin, mm_cfg.AuthSiteAdmin,
                  mm_cfg.AuthListModerator, mm_cfg.AuthUser)
@@ -686,7 +680,7 @@ address.  Upon confirmation, any other mailing list containing the address
             # Some topics were selected.  topicnames can actually be a string
             # or a list of strings depending on whether more than one topic
             # was selected or not.
-            if not isinstance(topicnames, ListType):
+            if not isinstance(topicnames, list):
                 # Assume it was a bare string, so listify it
                 topicnames = [topicnames]
             # unquote the topic names

@@ -31,7 +31,6 @@ import time
 import socket
 import smtplib
 from base64 import b64encode
-from types import UnicodeType
 
 from Mailman import mm_cfg
 from Mailman import Utils
@@ -41,17 +40,12 @@ from Mailman.Logging.Syslog import syslog
 from Mailman.SafeDict import MsgSafeDict
 
 import email
-from email.Utils import formataddr
-from email.Header import Header
-from email.Charset import Charset
+from email.utils import formataddr
+from email.header import Header
+from email.charset import Charset
 
 DOT = '.'
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 
@@ -360,7 +354,7 @@ def verpdeliver(mlist, msg, msgdata, envsender, failures, conn):
                     charset = 'iso-8859-1'
                 charset = Charset(charset)
                 codec = charset.input_codec or 'ascii'
-                if not isinstance(name, UnicodeType):
+                if not isinstance(name, str):
                     name = str(name, codec, 'replace')
                 name = Header(name, charset).encode()
                 msgcopy['To'] = formataddr((name, recip))

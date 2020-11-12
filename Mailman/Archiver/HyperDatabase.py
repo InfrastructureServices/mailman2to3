@@ -187,7 +187,7 @@ class DumbBTree:
     def close(self):
         omask = os.umask(0o07)
         try:
-            fp = open(self.path, 'w')
+            fp = open(self.path, 'wb')
         finally:
             os.umask(omask)
         fp.write(marshal.dumps(self.dict))

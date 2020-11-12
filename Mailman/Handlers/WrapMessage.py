@@ -24,8 +24,8 @@ original message.
 
 import copy
 
-from email.MIMEMessage import MIMEMessage
-from email.MIMEText import MIMEText
+from email.mime import message
+from email.mime import text
 
 from Mailman import Utils
 
@@ -74,11 +74,11 @@ def process(mlist, msg, msgdata):
     # Are we including dmarc_wrapped_message_text?  I.e., do we have text and
     # are we wrapping because of dmarc_moderation_action?
     if mlist.dmarc_wrapped_message_text and msgdata.get('from_is_list') == 2:
-        part1 = MIMEText(Utils.wrap(mlist.dmarc_wrapped_message_text),
+        part1 = text.MIMEText(Utils.wrap(mlist.dmarc_wrapped_message_text),
                          'plain',
                          Utils.GetCharSet(mlist.preferred_language))
         part1['Content-Disposition'] = 'inline'
-        part2 = MIMEMessage(omsg)
+        part2 = message.MIMEMessage(omsg)
         part2['Content-Disposition'] = 'inline'
         msg['Content-Type'] = 'multipart/mixed'
         msg.set_payload([part1, part2])

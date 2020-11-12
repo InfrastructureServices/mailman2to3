@@ -19,9 +19,9 @@
 """
 
 import re
-from email.MIMEMessage import MIMEMessage
-from email.MIMEText import MIMEText
-from email.Utils import parseaddr
+from email.mime import message
+from email.mime import text
+from email.utils import parseaddr
 
 from Mailman import mm_cfg
 from Mailman import Utils
@@ -161,11 +161,11 @@ def do_discard(mlist, msg):
                                         _('Auto-discard notification'),
                                         lang=lang)
         nmsg.set_type('multipart/mixed')
-        text = MIMEText(Utils.wrap(_(
+        text = text.MIMEText(Utils.wrap(_(
             'The attached message has been automatically discarded.')),
                         _charset=Utils.GetCharSet(lang))
         nmsg.attach(text)
-        nmsg.attach(MIMEMessage(msg))
+        nmsg.attach(message.MIMEMessage(msg))
         nmsg.send(mlist)
     # Discard this sucker
     raise Errors.DiscardMessage

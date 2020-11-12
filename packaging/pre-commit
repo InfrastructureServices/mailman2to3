@@ -1,0 +1,2 @@
+rpmdev-bumpspec --comment="Automated entry added by pre-commit hook" packaging/Fedora/mailman.spec 
+git add packaging/Fedora/mailman.spec

@@ -19,8 +19,7 @@
 
 import re
 
-from types import ListType
-from email.MIMEText import MIMEText
+from email.mime import text
 
 from Mailman import mm_cfg
 from Mailman import Utils
@@ -30,11 +29,6 @@ from Mailman.i18n import _
 from Mailman.SafeDict import SafeDict
 from Mailman.Logging.Syslog import syslog
 
-try:
-    True, False
-except:
-    True = 1
-    False = 0
 
 
 
@@ -47,7 +41,7 @@ def process(mlist, msg, msgdata):
         # Calculate the extra personalization dictionary.  Note that the
         # length of the recips list better be exactly 1.
         recips = msgdata.get('recips')
-        assert type(recips) == ListType and len(recips) == 1
+        assert isinstance(recips, list) and len(recips) == 1
         member = recips[0].lower()
         d['user_address'] = member
         try:
@@ -142,14 +136,14 @@ def process(mlist, msg, msgdata):
         # The next easiest thing to do is just prepend the header and append
         # the footer as additional subparts
         payload = msg.get_payload()
-        if not isinstance(payload, ListType):
+        if not isinstance(payload, list):
             payload = [payload]
         if footer:
-            mimeftr = MIMEText(footer, 'plain', lcset)
+            mimeftr = text.MIMEText(footer, 'plain', lcset)
             mimeftr['Content-Disposition'] = 'inline'
             payload.append(mimeftr)
         if header:
-            mimehdr = MIMEText(header, 'plain', lcset)
+            mimehdr = text.MIMEText(header, 'plain', lcset)
             mimehdr['Content-Disposition'] = 'inline'
             payload.insert(0, mimehdr)
         msg.set_payload(payload)
@@ -193,11 +187,11 @@ def process(mlist, msg, msgdata):
     # any).
     payload = [inner]
     if header:
-        mimehdr = MIMEText(header, 'plain', lcset)
+        mimehdr = text.MIMEText(header, 'plain', lcset)
         mimehdr['Content-Disposition'] = 'inline'
         payload.insert(0, mimehdr)
     if footer:
-        mimeftr = MIMEText(footer, 'plain', lcset)
+        mimeftr = text.MIMEText(footer, 'plain', lcset)
         mimeftr['Content-Disposition'] = 'inline'
         payload.append(mimeftr)
     msg.set_payload(payload)

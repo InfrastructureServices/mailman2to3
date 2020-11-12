@@ -22,21 +22,13 @@ import sys
 import mailbox
 
 import email
-from email.Parser import Parser
-from email.Errors import MessageParseError
+from email.parser import Parser
+from email.errors import MessageParseError
 
 from Mailman import mm_cfg
 from Mailman.Message import Generator
 from Mailman.Message import Message
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
-
-
-
 def _safeparser(fp):
     try:
         return email.message_from_file(fp, Message)
@@ -46,31 +38,13 @@ def _safeparser(fp):
 
 
 
-class Mailbox(mailbox.PortableUnixMailbox):
-    def __init__(self, fp):
-        mailbox.PortableUnixMailbox.__init__(self, fp, _safeparser)
+class Mailbox(mailbox.mbox):
+    def __init__(self, filename):
+        mailbox.mbox.__init__(self, filename, _safeparser)
 
     # msg should be an rfc822 message or a subclass.
     def AppendMessage(self, msg):
-        # Check the last character of the file and write a newline if it isn't
-        # a newline (but not at the beginning of an empty file).
-        try:
-            self.fp.seek(-1, 2)
-        except IOError as e:
-            # Assume the file is empty.  We can't portably test the error code
-            # returned, since it differs per platform.
-            pass
-        else:
-            if self.fp.read(1) != '\n':
-                self.fp.write('\n')
-        # Seek to the last char of the mailbox
-        self.fp.seek(0, 2)
-        # Create a Generator instance to write the message to the file
-        g = Generator(self.fp)
-        g.flatten(msg, unixfrom=True)
-        # Add one more trailing newline for separation with the next message
-        # to be appended to the mbox.
-        print(file=self.fp)
+        self.add(msg)
 
 
 
@@ -103,7 +77,7 @@ class ArchiverMailbox(Mailbox):
         else:
             self._scrubber = None
         self._mlist = mlist
-        mailbox.PortableUnixMailbox.__init__(self, fp, _archfactory(self))
+        mailbox.mbox.__init__(self, fp, _archfactory(self))
 
     def scrub(self, msg):
         if self._scrubber:

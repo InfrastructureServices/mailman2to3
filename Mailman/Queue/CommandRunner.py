@@ -29,7 +29,6 @@
 
 import re
 import sys
-from types import StringType, UnicodeType
 
 from Mailman import mm_cfg
 from Mailman import Utils
@@ -40,11 +39,11 @@ from Mailman.Queue.Runner import Runner
 from Mailman.Logging.Syslog import syslog
 from Mailman import LockFile
 
-from email.Header import decode_header, make_header, Header
-from email.Errors import HeaderParseError
-from email.Iterators import typed_subpart_iterator
-from email.MIMEText import MIMEText
-from email.MIMEMessage import MIMEMessage
+from email.header import decode_header, make_header, Header
+from email.errors import HeaderParseError
+from email.iterators import typed_subpart_iterator
+from email.mime import text
+from email.mime import message
 
 NL = '\n'
 CONTINUE = 0
@@ -52,11 +51,6 @@ STOP = 1
 BADCMD = 2
 BADSUBJ = 3
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 
@@ -75,11 +69,9 @@ class Results:
         self.lineno = 0
         self.subjcmdretried = 0
         self.respond = True
-        # Extract the subject header and do RFC 2047 decoding.  Note that
-        # Python 2.1's unicode() builtin doesn't call obj.__unicode__().
         subj = msg.get('subject', '')
         try:
-            subj = make_header(decode_header(subj)).__unicode__()
+            subj = str(make_header(decode_header(subj)))
             # TK: Currently we don't allow 8bit or multibyte in mail command.
             # MAS: However, an l10n 'Re:' may contain non-ascii so ignore it.
             subj = subj.encode('us-ascii', 'ignore')
@@ -101,7 +93,7 @@ class Results:
             return
         body = part.get_payload(decode=True)
         # text/plain parts better have string payloads
-        assert isinstance(body, StringType) or isinstance(body, UnicodeType)
+        assert isinstance(body, str) 
         lines = body.splitlines()
         # Use no more lines than specified
         self.commands.extend(lines[:mm_cfg.DEFAULT_MAIL_COMMANDS_MAX_LINES])
@@ -202,10 +194,10 @@ To obtain instructions, send a message containing just the word "help".
         charset = Utils.GetCharSet(self.msgdata['lang'])
         encoded_resp = []
         for item in resp:
-            if isinstance(item, UnicodeType):
+            if isinstance(item, (bytes, bytearray)):
                 item = item.encode(charset, 'replace')
             encoded_resp.append(item)
-        results = MIMEText(NL.join(encoded_resp), _charset=charset)
+        results = text.MIMEText(NL.join(encoded_resp), _charset=charset)
         # Safety valve for mail loops with misconfigured email 'bots.  We
         # don't respond to commands sent with "Precedence: bulk|junk|list"
         # unless they explicitly "X-Ack: yes", but not all mail 'bots are
@@ -228,11 +220,11 @@ To obtain instructions, send a message containing just the word "help".
             self.msg.set_payload(
                 _('Message body suppressed by Mailman site configuration\n'))
         if mm_cfg.RESPONSE_INCLUDE_LEVEL == 0:
-            orig = MIMEText(_(
+            orig = text.MIMEText(_(
                 'Original message suppressed by Mailman site configuration\n'
                 ), _charset=charset)
         else:
-            orig = MIMEMessage(self.msg)
+            orig = message.MIMEMessage(self.msg)
         msg.attach(orig)
         msg.send(self.mlist)
 

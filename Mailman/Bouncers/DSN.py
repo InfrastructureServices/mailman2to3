@@ -21,17 +21,12 @@ RFC 3464 obsoletes 1894 which was the old DSN standard.  This module has not
 been audited for differences between the two.
 """
 
-from email.Iterators import typed_subpart_iterator
-from email.Utils import parseaddr
+from email.iterators import typed_subpart_iterator
+from email.utils import parseaddr
 from io import StringIO
 
 from Mailman.Bouncers.BouncerAPI import Stop
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 

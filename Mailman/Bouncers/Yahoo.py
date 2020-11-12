@@ -19,7 +19,7 @@
 
 import re
 import email
-from email.Utils import parseaddr
+from email.utils import parseaddr
 
 tcre = (re.compile(r'message\s+from\s+yahoo\.\S+', re.IGNORECASE),
         re.compile(r'Sorry, we were unable to deliver your message to '
@@ -45,7 +45,7 @@ def process(msg):
     #     1 == tag line seen
     #     2 == end line seen
     state = 0
-    for line in email.Iterators.body_line_iterator(msg):
+    for line in email.iterators.body_line_iterator(msg):
         line = line.strip()
         if state == 0:
             for cre in tcre:

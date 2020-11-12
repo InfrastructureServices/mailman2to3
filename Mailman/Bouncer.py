@@ -19,10 +19,10 @@
 
 import sys
 import time
-from types import StringType
 
-from email.MIMEText import MIMEText
-from email.MIMEMessage import MIMEMessage
+from email.mime import text
+from email.mime import message
+
 
 from Mailman import mm_cfg
 from Mailman import Utils
@@ -251,11 +251,11 @@ class Bouncer:
         # a MultipartConversionError.
         umsg.set_type('multipart/mixed')
         umsg.attach(
-            MIMEText(text, _charset=Utils.GetCharSet(self.preferred_language)))
-        if isinstance(msg, StringType):
-            umsg.attach(MIMEText(msg))
+            text.MIMEText(text, _charset=Utils.GetCharSet(self.preferred_language)))
+        if isinstance(msg, str):
+            umsg.attach(text.MIMEText(msg))
         else:
-            umsg.attach(MIMEMessage(msg))
+            umsg.attach(message.MIMEMessage(msg))
         umsg.send(self)
 
     def sendNextNotification(self, member):
@@ -345,8 +345,8 @@ class Bouncer:
         # BAW: Be sure you set the type before trying to attach, or you'll get
         # a MultipartConversionError.
         bmsg.set_type('multipart/mixed')
-        txt = MIMEText(notice,
+        txt = text.MIMEText(notice,
                        _charset=Utils.GetCharSet(self.preferred_language))
         bmsg.attach(txt)
-        bmsg.attach(MIMEMessage(msg))
+        bmsg.attach(message.MIMEMessage(msg))
         bmsg.send(self)

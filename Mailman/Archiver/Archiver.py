@@ -36,11 +36,6 @@ from Mailman.SafeDict import SafeDict
 from Mailman.Logging.Syslog import syslog
 from Mailman.i18n import _
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 
 
@@ -178,7 +173,7 @@ class Archiver:
                       'hostname': self.host_name,
                       })
         cmd = ar % d
-        extarch = os.popen(cmd, 'w')
+        extarch = os.popen(cmd, 'wb')
         extarch.write(txt)
         status = extarch.close()
         if status:

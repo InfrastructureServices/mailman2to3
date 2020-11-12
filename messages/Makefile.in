@@ -42,7 +42,7 @@ OPT=		@OPT@
 CFLAGS=		$(OPT) $(DEFS)
 PACKAGEDIR= 	$(prefix)/messages
 SHELL=		/bin/sh
-MSGFMT= 	@PYTHON@ ../build/bin/msgfmt.py
+MSGFMT= 	msgfmt
 MSGMERGE=	msgmerge
 
 # CVS available languages
